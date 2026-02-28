@@ -1,0 +1,39 @@
+export {};
+
+type UpdaterStatus = {
+  status: 'idle' | 'disabled' | 'checking' | 'available' | 'not-available' | 'error';
+  message: string;
+  version: string;
+  availableVersion: string;
+  progress: number;
+  error: string;
+  downloadUrl?: string;
+};
+
+declare global {
+  interface Window {
+    gero?: {
+      minimize: () => void;
+      toggleMaximize: () => void;
+      close: () => void;
+      isMaximized: () => Promise<boolean>;
+      getAppVersion: () => Promise<string>;
+      setTheme: (theme: 'dark' | 'light') => Promise<void>;
+      checkForUpdates: () => Promise<void>;
+      quitAndInstallUpdate: () => Promise<void>;
+      getUpdaterStatus: () => Promise<UpdaterStatus>;
+      onUpdaterStatus: (callback: (status: UpdaterStatus) => void) => () => void;
+      getProxyToken: () => string | undefined;
+      getProxyPort: () => string;
+      getProxyHost: () => string;
+      onMaximizeChanged: (callback: (isMaximized: boolean) => void) => () => void;
+      setTrayLanguage: (language: 'en' | 'zh-CN') => Promise<void>;
+      setTrayLabels: (labels: {
+        open: string;
+        hide: string;
+        toggleDevTools: string;
+        quit: string;
+      }) => Promise<void>;
+    };
+  }
+}
