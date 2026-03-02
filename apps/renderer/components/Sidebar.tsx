@@ -1,9 +1,8 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Trash2, Settings, Search, Edit2, Check, X, Plus, Globe, Sun, Moon } from 'lucide-react';
 import { ChatSession } from '../types';
 import { Language, t } from '../utils/i18n';
 import { Theme } from '../utils/theme';
-import { useVirtualList } from '../hooks/useVirtualList';
 import { Button, IconButton, Input } from './ui';
 
 type SidebarProps = {
@@ -54,15 +53,6 @@ const SidebarComponent: React.FC<SidebarProps> = ({
   onOpenSettings,
 }) => {
   const listContainerRef = useRef<HTMLDivElement>(null);
-  const estimateItemSize = useCallback(() => 44, []);
-  const { visibleItems, topSpacerHeight, bottomSpacerHeight, measureItem } =
-    useVirtualList<ChatSession>({
-      items: filteredSessions,
-      containerRef: listContainerRef,
-      estimateSize: estimateItemSize,
-      getItemKey: (session) => session.id,
-      overscan: 10,
-    });
 
   const handleSessionItemKeyDown = (
     event: React.KeyboardEvent<HTMLDivElement>,
@@ -98,7 +88,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
               placeholder=""
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full rounded-lg bg-[var(--bg-2)] pl-9 pr-3 py-2 text-sm text-[var(--ink-2)] outline-none ring-1 ring-[var(--line-1)] transition-all placeholder-[var(--ink-3)] focus:ring-[var(--line-1)]"
+              className="w-full rounded-lg bg-[var(--bg-2)] pl-9 pr-3 py-2 text-sm text-[var(--ink-2)] outline-none ring-1 ring-[var(--line-1)] transition-colors duration-[160ms] ease-out placeholder-[var(--ink-3)] focus:ring-[var(--line-1)]"
             />
           </div>
         </div>
@@ -118,9 +108,8 @@ const SidebarComponent: React.FC<SidebarProps> = ({
             </div>
           ) : (
             <div className="space-y-0.5">
-              <div style={{ height: `${topSpacerHeight}px` }} />
-              {visibleItems.map(({ item: session, index }) => (
-                <div key={session.id} ref={(node) => measureItem(index, node as HTMLDivElement)}>
+              {filteredSessions.map((session) => (
+                <div key={session.id}>
                   <div
                     onClick={() => onLoadSession(session)}
                     onKeyDown={(event) => handleSessionItemKeyDown(event, session)}
@@ -131,7 +120,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                         ? 'page'
                         : undefined
                     }
-                    className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm border border-transparent ${
+                    className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors duration-[160ms] ease-out text-sm border border-transparent ${
                       currentSessionId === session.id && editingSessionId !== session.id
                         ? 'bg-[var(--bg-2)] text-[var(--ink-1)] border-[var(--line-1)]'
                         : 'text-[var(--ink-2)] hover:bg-[var(--bg-2)] hover:text-[var(--ink-1)]'
@@ -169,7 +158,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                         <div className="flex items-center gap-2 truncate flex-1">
                           <span className="truncate">{session.title}</span>
                         </div>
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-[160ms] ease-out">
                           <IconButton
                             onClick={(e) => onStartEdit(e, session)}
                             className="!h-7 !w-7 !p-1.5 rounded !ring-0 !bg-transparent hover:!bg-transparent shadow-none"
@@ -193,7 +182,6 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                   </div>
                 </div>
               ))}
-              <div style={{ height: `${bottomSpacerHeight}px` }} />
             </div>
           )}
         </div>

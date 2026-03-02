@@ -19,7 +19,7 @@ type UseChatSessionsOptions = {
   messages: ChatMessage[];
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   defaultSessionTitle: string;
-  scrollToBottom: (behavior?: ScrollBehavior, force?: boolean) => void;
+  scrollToBottom: (behavior?: ScrollBehavior) => void;
   syncProviderState: () => void;
   isStreaming: boolean;
   isLoading: boolean;
@@ -117,7 +117,7 @@ export const useChatSessions = ({
     }
 
     activateSessionContext(activeSession);
-    scrollToBottom('auto', true);
+    scrollToBottom('auto');
   }, [activateSessionContext, scrollToBottom]);
 
   useEffect(() => {
@@ -181,7 +181,7 @@ export const useChatSessions = ({
       activateSessionContext(session);
 
       closeSidebar();
-      scrollToBottom('auto', true);
+      scrollToBottom('auto');
     },
     [
       activateSessionContext,

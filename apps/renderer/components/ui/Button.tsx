@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from './cn';
 
 type ButtonVariant = 'primary' | 'ghost' | 'subtle';
 type ButtonSize = 'sm' | 'md' | 'icon';
@@ -21,20 +22,21 @@ const sizeClassMap: Record<ButtonSize, string> = {
   icon: 'h-9 w-9',
 };
 
-const Button: React.FC<ButtonProps> = ({
-  variant = 'ghost',
-  size = 'md',
-  className = '',
-  type = 'button',
-  ...props
-}) => {
-  return (
-    <button
-      type={type}
-      className={`rounded-lg font-medium transition-colors ${variantClassMap[variant]} ${sizeClassMap[size]} ${className}`}
-      {...props}
-    />
-  );
-};
+const BASE_BUTTON_CLASS = 'rounded-lg font-medium transition-colors duration-[160ms] ease-out';
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ variant = 'ghost', size = 'md', className = '', type = 'button', ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={cn(BASE_BUTTON_CLASS, variantClassMap[variant], sizeClassMap[size], className)}
+        {...props}
+      />
+    );
+  }
+);
+
+Button.displayName = 'Button';
 
 export default Button;

@@ -119,8 +119,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     return updaterStatusTextMap[updaterStatus.status] ?? '';
   };
 
-  if (!isOpen) return null;
-
   return (
     <Modal
       isOpen={isOpen}

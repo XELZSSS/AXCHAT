@@ -36,9 +36,11 @@
   --radius-lg: 20px;
 
   /* Motion Tokens */
-  --motion-fast: 180ms;
-  --motion-base: 220ms;
-  --motion-slow: 300ms;
+  --motion-fast: 120ms;
+  --motion-base: 160ms;
+  --motion-slow: 220ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Elevation and Layering */
   --shadow-1: 0 18px 48px rgba(0, 0, 0, 0.45);
@@ -322,9 +324,9 @@ input[type='password']::-ms-clear {
 }
 
 .fx-soft-rise {
-  animation: soft-rise 220ms ease-out both;
+  animation: soft-rise var(--motion-slow) var(--motion-ease-emphasized) both;
 }
 
 .fx-soft-fade {
-  animation: soft-fade 180ms ease-out both;
+  animation: soft-fade var(--motion-base) var(--motion-ease-standard) both;
 }

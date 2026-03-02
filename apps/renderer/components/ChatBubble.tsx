@@ -7,6 +7,7 @@ import { formatMessageTime } from '../utils/time';
 interface ChatBubbleProps {
   message: ChatMessage;
   isStreaming?: boolean;
+  animateOnMount?: boolean;
 }
 
 const TypingIndicator = () => (
@@ -17,7 +18,11 @@ const TypingIndicator = () => (
   </div>
 );
 
-const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false }) => {
+const ChatBubble: React.FC<ChatBubbleProps> = ({
+  message,
+  isStreaming = false,
+  animateOnMount = false,
+}) => {
   const isUser = message.role === Role.User;
   const isError = message.isError;
   const hasText = message.text && message.text.length > 0;
@@ -89,7 +94,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false })
   };
 
   return (
-    <div className="flex w-full mb-8 justify-center fx-soft-rise">
+    <div className={`flex w-full mb-8 justify-center ${animateOnMount ? 'fx-soft-rise' : ''}`}>
       <div
         className={`flex min-w-0 w-full max-w-[min(64rem,100%)] gap-4 ${
           isUser ? 'justify-end flex-row pr-3' : 'justify-start flex-row'

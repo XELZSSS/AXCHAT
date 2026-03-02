@@ -127,7 +127,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
       ref={containerRef}
       className={`mx-auto w-full max-w-[min(64rem,100%)] px-4 pb-6 ${containerClassName ?? ''}`}
     >
-      <div className="relative flex items-end gap-2 bg-[var(--bg-2)] [background-image:none] border border-[var(--line-1)] rounded-[var(--radius-2)] p-2 shadow-none transition-all duration-200">
+      <div className="relative flex items-end gap-2 bg-[var(--bg-2)] [background-image:none] border border-[var(--line-1)] rounded-[var(--radius-2)] p-2 shadow-none transition-colors duration-[160ms] ease-out">
         <textarea
           ref={textareaRef}
           value={input}
@@ -144,7 +144,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
             aria-pressed={searchEnabled}
             aria-label={searchToggleLabel}
             title={searchToggleLabel}
-            className={`h-9 w-9 rounded-full transition-all duration-200 flex items-center justify-center ring-1 ${
+            className={`h-9 w-9 rounded-full transition-colors transition-opacity duration-[160ms] ease-out flex items-center justify-center ring-1 ${
               searchEnabled
                 ? 'bg-white/10 text-[var(--ink-1)] ring-[var(--line-1)]'
                 : 'bg-[var(--bg-2)] text-[var(--ink-3)] ring-[var(--line-1)]'
@@ -168,7 +168,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
             disabled={(!input.trim() && !isStreaming) || (disabled && !isStreaming)}
             aria-label={sendActionLabel}
             title={sendActionLabel}
-            className={`h-9 w-9 rounded-full transition-all duration-200 flex items-center justify-center ${
+            className={`h-9 w-9 rounded-full transition-colors duration-[160ms] ease-out flex items-center justify-center ${
               input.trim() || isStreaming
                 ? 'bg-[var(--accent)] text-[#1a1a1a] hover:bg-[var(--accent-strong)]'
                 : 'bg-[var(--bg-2)] text-[var(--ink-3)] cursor-not-allowed'

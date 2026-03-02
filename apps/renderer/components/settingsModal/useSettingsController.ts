@@ -67,6 +67,12 @@ export const useSettingsController = ({
       return;
     }
     setPortalContainer(overlayRef.current);
+    const frame = window.requestAnimationFrame(() => {
+      setPortalContainer(overlayRef.current);
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
   }, [isOpen]);
 
   const handleSave = useCallback(() => {

@@ -108,14 +108,16 @@ const Dropdown: React.FC<DropdownProps> = ({
             <div
               ref={menuRef}
               id={listboxId}
-              className="fixed z-50 max-h-56 overflow-auto scrollbar-hide rounded-md border border-[var(--line-1)] bg-[var(--bg-2)] p-1.5 shadow-none"
+              className={`fixed z-[80] max-h-56 overflow-auto scrollbar-hide rounded-md border border-[var(--line-1)] bg-[var(--bg-2)] p-1.5 shadow-none transition-opacity transition-transform duration-[120ms] ease-out motion-reduce:transition-none ${
+                menuReady
+                  ? 'opacity-100 pointer-events-auto'
+                  : 'opacity-0 pointer-events-none'
+              }`}
               style={{
                 left: position.left,
                 width: position.width,
                 top: position.openUp ? position.top - 8 : position.top + position.height + 8,
                 transform: position.openUp ? 'translateY(-100%)' : undefined,
-                opacity: menuReady ? 1 : 0,
-                pointerEvents: menuReady ? 'auto' : 'none',
               }}
               role="listbox"
               tabIndex={-1}
@@ -130,7 +132,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                     type="button"
                     onClick={() => selectOption(index)}
                     onMouseEnter={() => setFocusedIndex(index)}
-                    className={`flex w-full items-center rounded-md px-2.5 py-1.5 text-xs font-sans transition-colors ${
+                    className={`flex w-full items-center rounded-md px-2.5 py-1.5 text-xs font-sans transition-colors duration-[120ms] ease-out ${
                       focusedIndex === index
                         ? 'bg-white/10 text-[var(--ink-1)]'
                         : option.value === value

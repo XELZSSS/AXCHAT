@@ -30,6 +30,7 @@ export const useStreamingMessages = ({
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const messagesContentRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const stopRequestedRef = useRef(false);
@@ -40,6 +41,15 @@ export const useStreamingMessages = ({
   const pendingForceRequestFrameRef = useRef<number | null>(null);
   const lastAutoScrollAtRef = useRef(0);
   const isNearBottomRef = useRef(true);
+
+  const updateNearBottomState = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const distanceToBottom = container.scrollHeight - (container.scrollTop + container.clientHeight);
+    const nextIsNearBottom = distanceToBottom <= NEAR_BOTTOM_THRESHOLD_PX;
+    isNearBottomRef.current = nextIsNearBottom;
+    setShowScrollToBottom(!nextIsNearBottom && messagesRef.current.length > 0);
+  }, [NEAR_BOTTOM_THRESHOLD_PX]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -118,35 +128,6 @@ export const useStreamingMessages = ({
     [scrollToBottom]
   );
 
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const updateNearBottomState = () => {
-      const distanceToBottom =
-        container.scrollHeight - (container.scrollTop + container.clientHeight);
-      const nextIsNearBottom = distanceToBottom <= NEAR_BOTTOM_THRESHOLD_PX;
-      isNearBottomRef.current = nextIsNearBottom;
-      setShowScrollToBottom(!nextIsNearBottom && messagesRef.current.length > 0);
-    };
-
-    updateNearBottomState();
-    const onScroll = () => updateNearBottomState();
-    container.addEventListener('scroll', onScroll, { passive: true });
-
-    return () => {
-      container.removeEventListener('scroll', onScroll);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (messages.length === 0) {
-      setShowScrollToBottom(false);
-      return;
-    }
-    setShowScrollToBottom(!isNearBottomRef.current);
-  }, [messages.length]);
-
   const scheduleAutoScroll = useCallback(
     (behavior: ScrollBehavior) => {
       pendingAutoScrollBehaviorRef.current = behavior;
@@ -184,6 +165,61 @@ export const useStreamingMessages = ({
     },
     [isStreaming, scrollToBottom]
   );
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    const sentinel = messagesEndRef.current;
+    if (!container) return;
+
+    updateNearBottomState();
+    if (!sentinel) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        if (entry.isIntersecting) {
+          isNearBottomRef.current = true;
+          setShowScrollToBottom(false);
+        } else {
+          updateNearBottomState();
+        }
+      },
+      {
+        root: container,
+        threshold: 0.98,
+      }
+    );
+    io.observe(sentinel);
+
+    return () => {
+      io.disconnect();
+    };
+  }, [messages.length, updateNearBottomState]);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    const content = messagesContentRef.current;
+    if (!container || !content) return;
+
+    const observer = new ResizeObserver(() => {
+      if (!isNearBottomRef.current) return;
+      scheduleAutoScroll('auto');
+    });
+
+    observer.observe(content);
+    return () => {
+      observer.disconnect();
+    };
+  }, [scheduleAutoScroll]);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setShowScrollToBottom(false);
+      return;
+    }
+    setShowScrollToBottom(!isNearBottomRef.current);
+  }, [messages.length]);
 
   const updateMessageById = useCallback(
     (messageId: string, updates: Partial<ChatMessage>) => {
@@ -230,11 +266,13 @@ export const useStreamingMessages = ({
       const modelMessage = buildMessage(Role.Model, '', { id: modelMessageId });
 
       commitMessages((prev) => [...prev, userMessage, modelMessage]);
-      requestForceScrollToBottom('auto');
+      if (isNearBottomRef.current) {
+        scheduleAutoScroll('auto');
+      }
 
       return modelMessageId;
     },
-    [buildMessage, commitMessages, requestForceScrollToBottom]
+    [buildMessage, commitMessages, scheduleAutoScroll]
   );
 
   const buildFriendlyErrorMessage = useCallback((rawMessage: string): string => {
@@ -299,11 +337,6 @@ ${rawMessage}
       console.error('Failed to synchronize chat history:', error);
     });
   }, [chatService]);
-
-  useEffect(() => {
-    if (!isStreaming) return;
-    scheduleAutoScroll('auto');
-  }, [isStreaming, messages, scheduleAutoScroll]);
 
   useEffect(() => {
     return () => {
@@ -405,10 +438,11 @@ ${rawMessage}
   const jumpToBottom = useCallback(() => {
     isNearBottomRef.current = true;
     setShowScrollToBottom(false);
-    scrollToBottom('smooth', true);
+    scrollToBottom('smooth');
   }, [scrollToBottom]);
 
   return {
+    messagesContentRef,
     messagesEndRef,
     messagesContainerRef,
     isStreaming,

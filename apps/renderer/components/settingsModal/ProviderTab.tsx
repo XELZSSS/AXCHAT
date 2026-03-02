@@ -235,7 +235,7 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
               onClick={() => onSetRegionBaseUrl('intl')}
               size="sm"
               variant="ghost"
-              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 ring-[var(--line-1)] transition-colors ${
+              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 ring-[var(--line-1)] transition-colors duration-[160ms] ease-out ${
                 baseUrl === resolveBaseUrlForRegion(providerId, 'intl')
                   ? 'bg-[var(--bg-2)] text-[var(--ink-1)] hover:bg-[var(--bg-2)] focus:bg-[var(--bg-2)] active:bg-[var(--bg-2)]'
                   : 'bg-transparent text-[var(--ink-3)] hover:bg-transparent focus:bg-transparent active:bg-transparent hover:text-[var(--ink-1)]'
@@ -247,7 +247,7 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
               onClick={() => onSetRegionBaseUrl('cn')}
               size="sm"
               variant="ghost"
-              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 ring-[var(--line-1)] transition-colors ${
+              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 ring-[var(--line-1)] transition-colors duration-[160ms] ease-out ${
                 baseUrl === resolveBaseUrlForRegion(providerId, 'cn')
                   ? 'bg-[var(--bg-2)] text-[var(--ink-1)] hover:bg-[var(--bg-2)] focus:bg-[var(--bg-2)] active:bg-[var(--bg-2)]'
                   : 'bg-transparent text-[var(--ink-3)] hover:bg-transparent focus:bg-transparent active:bg-transparent hover:text-[var(--ink-1)]'

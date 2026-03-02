@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from './cn';
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   compact?: boolean;
@@ -9,9 +10,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         ref={ref}
-        className={`rounded-md bg-[var(--bg-2)] [background-image:none] shadow-none text-[var(--ink-1)] outline-none ring-1 ring-[var(--line-1)] focus:ring-[var(--line-1)] ${
-          compact ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm'
-        } ${className}`}
+        className={cn(
+          'rounded-md bg-[var(--bg-2)] [background-image:none] shadow-none text-[var(--ink-1)] outline-none ring-1 ring-[var(--line-1)] focus:ring-[var(--line-1)]',
+          compact ? 'px-2.5 py-1.5 text-sm' : 'px-3 py-2 text-sm',
+          className
+        )}
         {...props}
       />
     );

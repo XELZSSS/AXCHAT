@@ -4,13 +4,13 @@ import ChatBubble from './ChatBubble';
 import ChatInput from './ChatInput';
 import WelcomeScreen from './WelcomeScreen';
 import { ChatMessage, Role } from '../types';
-import { useVirtualList } from '../hooks/useVirtualList';
 import { t } from '../utils/i18n';
 
 type ChatMainProps = {
   messages: ChatMessage[];
   isStreaming: boolean;
   isLoading: boolean;
+  messagesContentRef: React.RefObject<HTMLDivElement>;
   messagesContainerRef: React.RefObject<HTMLDivElement>;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   showScrollToBottom: boolean;
@@ -26,6 +26,7 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
   messages,
   isStreaming,
   isLoading,
+  messagesContentRef,
   messagesContainerRef,
   messagesEndRef,
   showScrollToBottom,
@@ -36,9 +37,9 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
   searchAvailable,
   onToggleSearch,
 }) => {
-  const lastSkippedMeasureIndexRef = useRef<number | null>(null);
-  const pendingFinalMeasureIndexRef = useRef<number | null>(null);
-  const previousIsStreamingRef = useRef(isStreaming);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const hasShownWelcomeRef = useRef(false);
+  const previousMessageIdsRef = useRef<string[]>([]);
 
   const chatInputProps = useMemo(
     () => ({
@@ -61,31 +62,20 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
     ]
   );
   const hasMessages = messages.length > 0;
-  const estimateMessageSize = useMemo(
-    () => (msg: ChatMessage) => {
-      const base = msg.role === Role.User ? 84 : 96;
-      const textLines = Math.max(1, Math.ceil((msg.text?.length ?? 0) / 56));
-      const reasoningLines = Math.max(0, Math.ceil((msg.reasoning?.length ?? 0) / 64));
-      const imageHeight = msg.imageUrl || msg.imageDataUrl ? 300 : 0;
-      return base + textLines * 20 + reasoningLines * 16 + imageHeight;
-    },
-    []
-  );
-  const { visibleItems, topSpacerHeight, bottomSpacerHeight, measureItem } =
-    useVirtualList<ChatMessage>({
-      items: messages,
-      containerRef: messagesContainerRef,
-      estimateSize: estimateMessageSize,
-      getItemKey: (msg) => msg.id,
-      overscan: messages.length,
-    });
 
   useEffect(() => {
-    if (previousIsStreamingRef.current && !isStreaming) {
-      pendingFinalMeasureIndexRef.current = lastSkippedMeasureIndexRef.current;
-    }
-    previousIsStreamingRef.current = isStreaming;
-  }, [isStreaming]);
+    previousMessageIdsRef.current = messages.map((message) => message.id);
+  }, [messages]);
+
+  const shouldAnimateWelcome = !hasMessages && !hasShownWelcomeRef.current;
+  if (shouldAnimateWelcome) {
+    hasShownWelcomeRef.current = true;
+  }
+
+  const previousMessageIds = previousMessageIdsRef.current;
+  const isAppendOnlyUpdate =
+    previousMessageIds.length <= messages.length &&
+    previousMessageIds.every((id, index) => messages[index]?.id === id);
 
   return (
     <main className="chat-main flex-1 flex flex-col h-full relative bg-transparent pt-0">
@@ -96,11 +86,13 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
         style={{ scrollPaddingBottom: 'calc(var(--chat-input-height, 120px) + 8px)' }}
       >
         <div
+          ref={messagesContentRef}
           className="mx-auto w-full max-w-[min(64rem,100%)] px-4 py-8 min-h-full flex flex-col"
           style={{ paddingBottom: 'calc(var(--chat-input-height, 120px) + 8px)' }}
         >
           {!hasMessages ? (
             <WelcomeScreen
+              animateOnMount={shouldAnimateWelcome}
               input={
                 <ChatInput
                   {...chatInputProps}
@@ -110,39 +102,25 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
             />
           ) : (
             <>
-              <div style={{ height: `${topSpacerHeight}px` }} />
-              {visibleItems.map(({ item: msg, index }) => (
-                <div
-                  key={msg.id}
-                  ref={(node) => {
-                    if (!node) return;
-                    const isStreamingTailModel =
-                      isStreaming && index === messages.length - 1 && msg.role === Role.Model;
+              {messages.map((msg, index) => {
+                const isNewInAppend =
+                  isAppendOnlyUpdate && index >= previousMessageIds.length;
+                const shouldAnimateMessage =
+                  isNewInAppend && !seenMessageIdsRef.current.has(msg.id);
+                seenMessageIdsRef.current.add(msg.id);
 
-                    if (isStreamingTailModel) {
-                      // Keep virtual list on estimated size while streaming to reduce layout jitter.
-                      lastSkippedMeasureIndexRef.current = index;
-                      return;
-                    }
-
-                    measureItem(index, node);
-
-                    if (pendingFinalMeasureIndexRef.current === index) {
-                      // Force one final precise measure after stream end.
-                      measureItem(index, node);
-                      pendingFinalMeasureIndexRef.current = null;
-                    }
-                  }}
-                >
-                  <ChatBubble
-                    message={msg}
-                    isStreaming={
-                      isStreaming && index === messages.length - 1 && msg.role === Role.Model
-                    }
-                  />
-                </div>
-              ))}
-              <div style={{ height: `${bottomSpacerHeight}px` }} />
+                return (
+                  <div key={msg.id}>
+                    <ChatBubble
+                      message={msg}
+                      animateOnMount={shouldAnimateMessage}
+                      isStreaming={
+                        isStreaming && index === messages.length - 1 && msg.role === Role.Model
+                      }
+                    />
+                  </div>
+                );
+              })}
               {isStreaming && <div className="flex justify-start mb-6"></div>}
               <div ref={messagesEndRef} className="h-4" />
             </>
@@ -160,7 +138,7 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
             <button
               type="button"
               onClick={onJumpToBottom}
-              className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line-1)] bg-[var(--bg-2)] text-[var(--ink-2)] shadow-sm transition-colors hover:text-[var(--ink-1)]"
+              className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line-1)] bg-[var(--bg-2)] text-[var(--ink-2)] shadow-sm transition-colors duration-[160ms] ease-out hover:text-[var(--ink-1)]"
               aria-label={t('chat.scrollToBottom')}
               title={t('chat.scrollToBottom')}
             >
