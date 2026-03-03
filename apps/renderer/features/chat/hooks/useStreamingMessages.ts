@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { ChatService } from '../services/chatService';
-import { ChatMessage, Role } from '../types';
-import { t } from '../utils/i18n';
+import { ChatService } from '../../../services/chatService';
+import { ChatMessage, Role } from '../../../types';
+import { t } from '../../../utils/i18n';
 import {
   appendThinkStreamChunk,
   createThinkStreamParserState,
   finalizeThinkStreamParserState,
-} from '../utils/streaming';
-import { formatMessageTime } from '../utils/time';
+} from '../../../utils/streaming';
+import { formatMessageTime } from '../../../utils/time';
 
 type UseStreamingMessagesOptions = {
   chatService: ChatService;

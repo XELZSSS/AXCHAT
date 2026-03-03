@@ -9,7 +9,7 @@ import { sanitizeApiKey } from './utils';
 
 export const DEEPSEEK_PROVIDER_ID: ProviderId = 'deepseek';
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com';
-const FALLBACK_DEEPSEEK_MODEL = 'deepseek-chat';
+const FALLBACK_DEEPSEEK_MODEL = 'deepseek-reasoner';
 const { defaultModel: DEFAULT_DEEPSEEK_MODEL, models: DEEPSEEK_MODELS } = buildProviderModelConfig({
   envModel: process.env.DEEPSEEK_MODEL,
   fallbackModel: FALLBACK_DEEPSEEK_MODEL,

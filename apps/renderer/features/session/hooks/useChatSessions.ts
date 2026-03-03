@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, FormEvent, KeyboardEvent, MouseEvent, SetStateAction } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { ChatService } from '../services/chatService';
-import { ChatMessage, ChatSession, Role } from '../types';
+import { ChatService } from '../../../services/chatService';
+import { ChatMessage, ChatSession, Role } from '../../../types';
 import {
   clearActiveSessionId,
   deleteSession,
@@ -11,8 +11,8 @@ import {
   saveSession,
   setActiveSessionId,
   updateSessionTitle,
-} from '../services/sessionStore';
-import { isDefaultSessionTitle } from '../utils/i18n';
+} from '../../../services/sessionStore';
+import { isDefaultSessionTitle } from '../../../utils/i18n';
 
 type UseChatSessionsOptions = {
   chatService: ChatService;

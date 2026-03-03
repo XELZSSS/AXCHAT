@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppController } from './hooks/useAppController';
+import { useAppController } from './features/app/hooks/useAppController';
 import Sidebar from './components/Sidebar';
 import ChatMain from './components/ChatMain';
 import TitleBar from './components/TitleBar';

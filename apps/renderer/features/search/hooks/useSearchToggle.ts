@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ChatService } from '../services/chatService';
-import { readAppStorage, writeAppStorage } from '../services/storageKeys';
+import { ChatService } from '../../../services/chatService';
+import { readAppStorage, writeAppStorage } from '../../../services/storageKeys';
 
 type UseSearchToggleOptions = {
   chatService: ChatService;

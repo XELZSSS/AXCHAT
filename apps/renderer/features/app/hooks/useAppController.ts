@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChatMessage } from '../types';
-import { ChatService } from '../services/chatService';
-import { t, getLanguage, applyLanguageToDocument, Language } from '../utils/i18n';
-import { useChatSessions } from './useChatSessions';
-import { useStreamingMessages } from './useStreamingMessages';
-import { useSearchToggle } from './useSearchToggle';
-import { useAppSettings } from './useAppSettings';
-import { Theme, applyThemeToDocument, getTheme, setTheme as persistTheme } from '../utils/theme';
-import { getUpdaterStatus, subscribeUpdaterStatus } from '../services/updaterClient';
-import type { UpdaterStatus } from '../services/updaterClient';
+import { ChatMessage } from '../../../types';
+import { ChatService } from '../../../services/chatService';
+import { t, getLanguage, applyLanguageToDocument, Language } from '../../../utils/i18n';
+import { useChatSessions } from '../../session/hooks/useChatSessions';
+import { useStreamingMessages } from '../../chat/hooks/useStreamingMessages';
+import { useSearchToggle } from '../../search/hooks/useSearchToggle';
+import { useAppSettings } from '../../settings/hooks/useAppSettings';
+import {
+  Theme,
+  applyThemeToDocument,
+  getTheme,
+  setTheme as persistTheme,
+} from '../../../utils/theme';
+import { getUpdaterStatus, subscribeUpdaterStatus } from '../../../services/updaterClient';
+import type { UpdaterStatus } from '../../../services/updaterClient';
 
 const chatService = new ChatService();
 

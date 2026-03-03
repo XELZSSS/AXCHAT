@@ -84,7 +84,7 @@ const providerModelSpecs: Record<ProviderId, ProviderModelSpec> = {
   },
   deepseek: {
     envModel: process.env.DEEPSEEK_MODEL,
-    fallbackModel: 'deepseek-chat',
+    fallbackModel: 'deepseek-reasoner',
     catalog: DEEPSEEK_MODEL_CATALOG,
   },
   glm: {

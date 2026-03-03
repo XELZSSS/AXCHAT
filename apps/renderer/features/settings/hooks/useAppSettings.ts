@@ -1,8 +1,8 @@
 import { Dispatch, SetStateAction, useCallback } from 'react';
-import { ChatService } from '../services/chatService';
-import { ProviderId } from '../types';
-import { ProviderSettingsMap, SaveSettingsPayload } from '../services/settingsTypes';
-import { Language, setLanguage, t } from '../utils/i18n';
+import { ChatService } from '../../../services/chatService';
+import { ProviderId } from '../../../types';
+import { ProviderSettingsMap, SaveSettingsPayload } from '../../../services/settingsTypes';
+import { Language, setLanguage, t } from '../../../utils/i18n';
 
 type UseAppSettingsOptions = {
   chatService: ChatService;
