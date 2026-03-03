@@ -16,8 +16,26 @@ const getStoredToolRounds = () => {
 const getStoredActiveTab = (): ActiveSettingsTab => {
   if (typeof window === 'undefined') return 'provider';
   const stored = readAppStorage('settingsActiveTab');
-  if (stored === 'provider' || stored === 'search' || stored === 'shortcuts') return stored;
+  if (
+    stored === 'provider' ||
+    stored === 'search' ||
+    stored === 'memoryExport' ||
+    stored === 'version' ||
+    stored === 'shortcuts'
+  ) {
+    return stored;
+  }
   return 'provider';
+};
+
+const getStoredMem0ApiKey = (): string => {
+  if (typeof window === 'undefined') return '';
+  return readAppStorage('mem0ApiKey') ?? '';
+};
+
+const getStoredMem0UserId = (): string => {
+  if (typeof window === 'undefined') return '';
+  return readAppStorage('mem0UserId') ?? '';
 };
 
 type BuildStateInput = {
@@ -36,8 +54,11 @@ const buildStateFromInput = (input: BuildStateInput): SettingsModalState => ({
   baseUrl: resolveBaseUrlForProvider(input.providerId, input.baseUrl),
   customHeaders: input.customHeaders ?? [],
   tavily: input.tavily ?? {},
+  mem0ApiKey: getStoredMem0ApiKey(),
+  mem0UserId: getStoredMem0UserId(),
   showApiKey: false,
   showTavilyKey: false,
+  showMem0ApiKey: false,
   toolCallMaxRounds: getStoredToolRounds(),
   activeTab: getStoredActiveTab(),
 });
@@ -94,6 +115,8 @@ export const useSettingsForm = ({
   const activeMeta = providerMeta[state.providerId];
   const providerTabLabel = t('settings.modal.tab.model');
   const searchTabLabel = t('settings.modal.tab.search');
+  const memoryExportTabLabel = t('settings.modal.tab.memoryExport');
+  const versionTabLabel = t('settings.modal.tab.version');
   const shortcutsTabLabel = t('settings.modal.tab.shortcuts');
   const tabs = useMemo(
     () =>
@@ -105,12 +128,29 @@ export const useSettingsForm = ({
           visible: !!activeMeta?.supportsTavily,
         },
         {
+          id: 'memoryExport' as const,
+          label: memoryExportTabLabel,
+          visible: true,
+        },
+        {
+          id: 'version' as const,
+          label: versionTabLabel,
+          visible: true,
+        },
+        {
           id: 'shortcuts' as const,
           label: shortcutsTabLabel,
           visible: true,
         },
       ].filter((tab) => tab.visible),
-    [activeMeta, providerTabLabel, searchTabLabel, shortcutsTabLabel]
+    [
+      activeMeta,
+      memoryExportTabLabel,
+      providerTabLabel,
+      searchTabLabel,
+      shortcutsTabLabel,
+      versionTabLabel,
+    ]
   );
 
   useEffect(() => {

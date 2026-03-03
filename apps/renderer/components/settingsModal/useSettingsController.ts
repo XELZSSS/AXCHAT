@@ -34,6 +34,15 @@ const persistToolCallRounds = (value: string): void => {
   writeAppStorage('toolCallMaxRounds', String(normalized));
 };
 
+const persistOptionalStorageField = (key: 'mem0ApiKey' | 'mem0UserId', value: string): void => {
+  const normalized = value.trim();
+  if (!normalized) {
+    removeAppStorage(key);
+    return;
+  }
+  writeAppStorage(key, normalized);
+};
+
 export const useSettingsController = ({
   isOpen,
   onClose,
@@ -77,6 +86,8 @@ export const useSettingsController = ({
 
   const handleSave = useCallback(() => {
     persistToolCallRounds(state.toolCallMaxRounds);
+    persistOptionalStorageField('mem0ApiKey', state.mem0ApiKey);
+    persistOptionalStorageField('mem0UserId', state.mem0UserId);
 
     onSave({
       providerId: state.providerId,
@@ -132,6 +143,15 @@ export const useSettingsController = ({
     [dispatch, setField, state.showTavilyKey]
   );
 
+  const memoryExportActions = useMemo(
+    () => ({
+      onMem0ApiKeyChange: (value: string) => setField('mem0ApiKey', value),
+      onMem0UserIdChange: (value: string) => setField('mem0UserId', value),
+      onToggleMem0ApiKeyVisibility: () => setField('showMem0ApiKey', !state.showMem0ApiKey),
+    }),
+    [setField, state.showMem0ApiKey]
+  );
+
   const handleTabChange = useCallback(
     (id: ActiveSettingsTab) => setField('activeTab', id),
     [setField]
@@ -148,5 +168,6 @@ export const useSettingsController = ({
     onTabChange: handleTabChange,
     providerActions,
     searchActions,
+    memoryExportActions,
   };
 };

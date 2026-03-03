@@ -5,7 +5,8 @@ type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   compact?: boolean;
 };
 
-const BASE = 'rounded-lg bg-[var(--bg-2)] text-[var(--ink-1)] outline-none ring-1 ring-[var(--line-1)] focus:ring-[var(--line-1)] placeholder:text-[var(--ink-3)]';
+const BASE =
+  'rounded-lg bg-[var(--bg-2)] text-[var(--ink-1)] outline-none ring-1 ring-[var(--line-1)] focus:ring-[var(--line-1)] placeholder:text-[var(--ink-3)]';
 
 const SIZES = {
   compact: 'px-2.5 py-1.5 text-sm',

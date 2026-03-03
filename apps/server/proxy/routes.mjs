@@ -1,4 +1,7 @@
-export const registerStaticProxyRoutes = async (app, { proxyPlugin, routes, verifyProxyAuth, buildForwardHeaders }) => {
+export const registerStaticProxyRoutes = async (
+  app,
+  { proxyPlugin, routes, verifyProxyAuth, buildForwardHeaders }
+) => {
   for (const route of routes) {
     await app.register(proxyPlugin, {
       prefix: route.path,

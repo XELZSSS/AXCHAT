@@ -41,7 +41,10 @@ export class ProviderSettingsRepository {
     const current = this.getSettings(providerId);
     const next = normalizeProviderSettingsUpdate(providerId, current, updates);
     if (updates.tavily !== undefined) {
-      this.settings = applyGlobalTavilyConfig({ ...this.settings, [providerId]: next }, next.tavily);
+      this.settings = applyGlobalTavilyConfig(
+        { ...this.settings, [providerId]: next },
+        next.tavily
+      );
     } else {
       this.settings = { ...this.settings, [providerId]: next };
     }

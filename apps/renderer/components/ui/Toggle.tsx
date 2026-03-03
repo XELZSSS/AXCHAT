@@ -14,19 +14,11 @@ const BASE = [
   'disabled:cursor-not-allowed disabled:opacity-50',
 ].join(' ');
 
-const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <input
-        ref={ref}
-        type="checkbox"
-        role="switch"
-        className={cn(BASE, className)}
-        {...props}
-      />
-    );
-  }
-);
+const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(({ className, ...props }, ref) => {
+  return (
+    <input ref={ref} type="checkbox" role="switch" className={cn(BASE, className)} {...props} />
+  );
+});
 
 Toggle.displayName = 'Toggle';
 

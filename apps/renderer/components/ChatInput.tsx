@@ -146,13 +146,9 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
             aria-label={searchToggleLabel}
             title={searchToggleLabel}
             className={`p-1 rounded-lg transition-colors duration-160 ease-out ${
-              searchEnabled
-                ? 'text-[#3b82f6]'
-                : 'text-[var(--ink-3)] hover:text-[#3b82f6]'
+              searchEnabled ? 'text-[#3b82f6]' : 'text-[var(--ink-3)] hover:text-[#3b82f6]'
             } ${
-              searchAvailable && !(disabled && !isStreaming)
-                ? ''
-                : 'opacity-50 cursor-not-allowed'
+              searchAvailable && !(disabled && !isStreaming) ? '' : 'opacity-50 cursor-not-allowed'
             }`}
           >
             <Search size={18} />

@@ -66,7 +66,10 @@ export class ChatOrchestrator {
     return this.settingsRepository.getAllSettings();
   }
 
-  updateProviderSettings(providerId: ProviderId, updates: Partial<ProviderSettings>): ProviderSettings {
+  updateProviderSettings(
+    providerId: ProviderId,
+    updates: Partial<ProviderSettings>
+  ): ProviderSettings {
     const next = this.settingsRepository.updateSettings(providerId, updates);
     if (providerId === this.getProviderId()) {
       this.runtime.applyProviderSettings(providerId, next);

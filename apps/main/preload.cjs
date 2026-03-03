@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('gero', {
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
   quitAndInstallUpdate: () => ipcRenderer.invoke('updater:quit-and-install'),
   getUpdaterStatus: () => ipcRenderer.invoke('updater:get-status'),
+  openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
   getProxyToken: () => process.env.ACHATX_PROXY_TOKEN,
   getProxyPort: () => resolveProxyPort(process.env.MINIMAX_PROXY_PORT),
   getProxyHost: () => resolveProxyHost(process.env.MINIMAX_PROXY_HOST),

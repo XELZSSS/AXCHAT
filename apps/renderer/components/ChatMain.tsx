@@ -103,8 +103,7 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
           ) : (
             <>
               {messages.map((msg, index) => {
-                const isNewInAppend =
-                  isAppendOnlyUpdate && index >= previousMessageIds.length;
+                const isNewInAppend = isAppendOnlyUpdate && index >= previousMessageIds.length;
                 const shouldAnimateMessage =
                   isNewInAppend && !seenMessageIdsRef.current.has(msg.id);
                 seenMessageIdsRef.current.add(msg.id);

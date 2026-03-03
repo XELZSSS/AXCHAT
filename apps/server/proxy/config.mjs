@@ -71,7 +71,10 @@ export const parseCustomHeaders = (value) => {
   }
 };
 
-export const buildForwardHeaders = (headers, { removeBlockedHeaders = false, customHeaders = [] } = {}) => {
+export const buildForwardHeaders = (
+  headers,
+  { removeBlockedHeaders = false, customHeaders = [] } = {}
+) => {
   const next = {};
   for (const [key, value] of Object.entries(headers ?? {})) {
     if (value === undefined) continue;
@@ -106,4 +109,5 @@ export const staticRoutes = [
   { path: '/proxy/glm-cn', target: 'https://open.bigmodel.cn', rewrite: '/api/paas/v4' },
   { path: '/proxy/glm-intl', target: 'https://api.z.ai', rewrite: '/api/paas/v4' },
   { path: '/proxy/tavily', target: 'https://api.tavily.com', rewrite: '' },
+  { path: '/proxy/mem0', target: 'https://api.mem0.ai', rewrite: '/v1' },
 ];

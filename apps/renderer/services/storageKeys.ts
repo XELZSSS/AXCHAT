@@ -44,6 +44,14 @@ const STORAGE_KEYS = {
     current: 'achatx_tool_call_max_rounds',
     legacy: ['gemini_tool_call_max_rounds'],
   },
+  mem0ApiKey: {
+    current: 'achatx_mem0_api_key',
+    legacy: [],
+  },
+  mem0UserId: {
+    current: 'achatx_mem0_user_id',
+    legacy: [],
+  },
 } as const satisfies Record<string, KeyDefinition>;
 
 export type AppStorageKey = keyof typeof STORAGE_KEYS;

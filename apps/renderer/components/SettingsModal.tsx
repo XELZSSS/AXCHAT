@@ -4,6 +4,8 @@ import { ProviderId, TavilyConfig } from '../types';
 import { t } from '../utils/i18n';
 import ProviderTab from './settingsModal/ProviderTab';
 import SearchTab from './settingsModal/SearchTab';
+import MemoryExportTab from './settingsModal/MemoryExportTab';
+import VersionTab from './settingsModal/VersionTab';
 import ShortcutsTab from './settingsModal/ShortcutsTab';
 import { useSettingsController } from './settingsModal/useSettingsController';
 import { ProviderSettingsMap, SaveSettingsPayload } from './settingsModal/types';
@@ -16,6 +18,7 @@ import {
   subscribeUpdaterStatus,
 } from '../services/updaterClient';
 import type { UpdaterStatus } from '../services/updaterClient';
+import { downloadMemoryExport, exportMem0Memories } from '../services/memoryExportClient';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -42,10 +45,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   tavily,
   onSave,
 }) => {
+  const AUTHOR_NAME = 'XELZSSS';
+  const AUTHOR_URL = 'https://github.com/XELZSSS';
   const modalTitleId = useId();
   const tabsIdPrefix = useId();
   const [appVersion, setAppVersion] = useState<string>('');
   const [updaterStatus, setUpdaterStatus] = useState<UpdaterStatus>(DEFAULT_UPDATER_STATUS);
+  const [memoryExportStatus, setMemoryExportStatus] = useState<string>('');
+  const [isExportingMemory, setIsExportingMemory] = useState(false);
   const updaterStatusTextMap: Partial<Record<UpdaterStatus['status'], string>> = {
     checking: t('settings.update.status.checking'),
     'not-available': t('settings.update.status.latest'),
@@ -64,6 +71,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     onTabChange,
     providerActions,
     searchActions,
+    memoryExportActions,
   } = useSettingsController({
     isOpen,
     onClose,
@@ -102,12 +110,54 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isOpen) return;
+    setMemoryExportStatus('');
+    setIsExportingMemory(false);
+  }, [isOpen]);
+
   const handleCheckForUpdates = async () => {
     await checkForUpdates();
   };
 
   const handleOpenUpdateDownload = async () => {
     await openUpdateDownload();
+  };
+
+  const handleOpenAuthorPage = async () => {
+    if (typeof window !== 'undefined' && window.gero?.openExternal) {
+      await window.gero.openExternal(AUTHOR_URL);
+      return;
+    }
+    window.open(AUTHOR_URL, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleExportMemory = async () => {
+    const apiKey = state.mem0ApiKey.trim();
+    if (!apiKey) {
+      setMemoryExportStatus(t('settings.memoryExport.status.missingApiKey'));
+      return;
+    }
+
+    const userId = state.mem0UserId.trim();
+    if (!userId) {
+      setMemoryExportStatus(t('settings.memoryExport.status.missingUserId'));
+      return;
+    }
+
+    setIsExportingMemory(true);
+    setMemoryExportStatus(t('settings.memoryExport.status.exporting'));
+
+    try {
+      const payload = await exportMem0Memories({ apiKey, userId });
+      downloadMemoryExport(payload, userId);
+      setMemoryExportStatus(t('settings.memoryExport.status.success'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setMemoryExportStatus(`${t('settings.memoryExport.status.failed')}: ${message}`);
+    } finally {
+      setIsExportingMemory(false);
+    }
   };
 
   const getUpdateStatusText = (): string => {
@@ -197,28 +247,39 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               />
             )}
 
+            {state.activeTab === 'memoryExport' && (
+              <MemoryExportTab
+                mem0ApiKey={state.mem0ApiKey}
+                mem0UserId={state.mem0UserId}
+                showMem0ApiKey={state.showMem0ApiKey}
+                isExporting={isExportingMemory}
+                statusText={memoryExportStatus}
+                onMem0ApiKeyChange={memoryExportActions.onMem0ApiKeyChange}
+                onMem0UserIdChange={memoryExportActions.onMem0UserIdChange}
+                onToggleMem0ApiKeyVisibility={memoryExportActions.onToggleMem0ApiKeyVisibility}
+                onExport={handleExportMemory}
+              />
+            )}
+
+            {state.activeTab === 'version' && (
+              <VersionTab
+                appVersion={appVersion}
+                updateStatusText={getUpdateStatusText()}
+                updaterStatus={updaterStatus.status}
+                onCheckForUpdates={handleCheckForUpdates}
+                onOpenUpdateDownload={handleOpenUpdateDownload}
+              />
+            )}
+
             {state.activeTab === 'shortcuts' && <ShortcutsTab />}
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 p-3 pt-2">
-          <div className="mr-auto text-xs text-[var(--ink-3)]">{getUpdateStatusText()}</div>
-          <Button
-            onClick={handleCheckForUpdates}
-            variant="ghost"
-            size="sm"
-            disabled={updaterStatus.status === 'checking'}
-          >
-            {t('settings.update.check')}
+          <div className="mr-auto text-xs text-[var(--ink-3)]" />
+          <Button onClick={handleOpenAuthorPage} variant="ghost" size="sm">
+            {AUTHOR_NAME}
           </Button>
-          {updaterStatus.status === 'available' && (
-            <Button onClick={handleOpenUpdateDownload} variant="ghost" size="sm">
-              {t('settings.update.download')}
-            </Button>
-          )}
-          <div className="flex h-8 items-center text-xs text-[var(--ink-3)]">
-            {appVersion ? `v${appVersion}` : ''}
-          </div>
           <Button onClick={onClose} variant="ghost" size="sm">
             {t('settings.modal.cancel')}
           </Button>

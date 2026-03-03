@@ -2,6 +2,7 @@
   "name": "achatx",
   "description": "AchatX desktop chat client",
   "author": "AchatX",
+  "license": "GPL-3.0-only",
   "private": true,
   "version": "1.3.0",
   "type": "module",

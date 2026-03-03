@@ -15,6 +15,7 @@ declare global {
       quitAndInstallUpdate: () => Promise<void>;
       getUpdaterStatus: () => Promise<UpdaterStatus>;
       onUpdaterStatus: (callback: (status: UpdaterStatus) => void) => () => void;
+      openExternal: (url: string) => Promise<void>;
       getProxyToken: () => string | undefined;
       getProxyPort: () => string;
       getProxyHost: () => string;

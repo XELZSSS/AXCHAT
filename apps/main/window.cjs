@@ -1,5 +1,5 @@
-/* global setTimeout, clearTimeout, process */
-const { app, BrowserWindow, ipcMain, nativeTheme } = require('electron');
+/* global setTimeout, clearTimeout, process, URL */
+const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -129,6 +129,47 @@ const loadWindowContent = async (win, isDev) => {
   await win.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'));
 };
 
+const shouldOpenExternally = (url, isDev) => {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+
+  try {
+    const parsed = new URL(trimmed);
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol !== 'http:' && protocol !== 'https:') {
+      return false;
+    }
+
+    if (isDev) {
+      const devOrigin = new URL(process.env.VITE_DEV_SERVER_URL ?? 'http://localhost:3000').origin;
+      return parsed.origin !== devOrigin;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const registerExternalNavigationGuards = (win, isDev) => {
+  // Route all external window.open requests to the system browser.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (shouldOpenExternally(url, isDev)) {
+      void shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
+
+  // Keep the app shell locked and route external navigations out of process.
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!shouldOpenExternally(url, isDev)) return;
+    event.preventDefault();
+    void shell.openExternal(url);
+  });
+};
+
 const createMainWindow = async ({ isDev, shouldPreventClose }) => {
   const [state, theme] = await Promise.all([loadWindowState(), loadThemeState()]);
   const initialTheme = applyWindowTheme(theme);
@@ -157,6 +198,7 @@ const createMainWindow = async ({ isDev, shouldPreventClose }) => {
   mainWindow.setAutoHideMenuBar(true);
   mainWindow.setMenuBarVisibility(false);
   mainWindow.removeMenu();
+  registerExternalNavigationGuards(mainWindow, isDev);
 
   if (state.isMaximized) {
     mainWindow.maximize();

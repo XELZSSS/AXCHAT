@@ -1,4 +1,4 @@
-const { ipcMain } = require('electron');
+const { ipcMain, shell } = require('electron');
 
 const registerIpcHandlers = (handlers) => {
   for (const [channel, handler] of Object.entries(handlers)) {
@@ -30,6 +30,11 @@ const registerAppIpcHandlers = ({
     },
     'updater:get-status': () => {
       return getUpdaterState();
+    },
+    'app:open-external': async (_event, url) => {
+      const target = String(url ?? '').trim();
+      if (!target) return;
+      await shell.openExternal(target);
     },
   });
 };

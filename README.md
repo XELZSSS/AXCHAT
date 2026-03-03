@@ -5,12 +5,16 @@
 
 AchatX 是一款跨平台的AI聊天应用，支持多家模型供应商（兼容openai格式的第三方供应商）与搜索增强，适合日常对话与检索辅助。
 
+## 📝 作者声明
+
+本项目是由 Codex 从 0 到 1 的自主开发完成，可以说这个项目是用来展示 Codex 模型能力的，也可以当作一个玩具项目来体验和把玩。
+
 ## 🚀 核心功能
 
 - 多模型供应商切换与模型配置
-- 文本对话
+- 文本对话与记忆导出
 - 可选搜索增强（搜索引擎）
-- 会话自动保存、搜索与排序
+- 会话自动保存与搜索
 - 本地 Ollama 支持
 
 ## 🧱 技术栈
@@ -68,6 +72,16 @@ npm run dev
 - 模型：可填写供应商支持的模型名
 - Base URL / 自定义 Header：OpenAI-Compatible、OpenRouter 支持
 - 搜索引擎：可选，用于搜索增强
+- 记忆：可在设置中的“记忆”标签页配置 Mem0
+
+### 🧠 记忆功能（Mem0）
+
+- 功能入口：设置 -> `记忆`
+- 需要填写：
+  - `Mem0 API Key`
+  - `Mem0 用户 ID`
+- 点击“导出”后会通过本地代理请求 Mem0 导出接口，并下载为本地 `json` 文件
+- 该功能依赖网络，且需要有效的 Mem0 凭证
 
 ### 🔒 本地代理安全参数（可选）
 
@@ -110,13 +124,37 @@ npm run dev
 ## 🗂️ 目录结构
 
 ```
-apps/main      Electron 主进程
-apps/renderer  前端界面
-apps/server    本地代理
-assets/icons   应用图标
+apps/
+  main/                         Electron 主进程
+    proxy/                      代理进程启动与配置
+    main.cjs                    主进程入口
+    window.cjs                  窗口生命周期与导航控制
+    preload.cjs                 渲染层安全桥接
+    ipc.cjs                     主进程 IPC 注册
+    tray.cjs                    托盘逻辑
+    updater.cjs                 版本更新逻辑
+  renderer/                     前端界面
+    features/                   业务功能分层
+    components/                 UI 组件
+      settingsModal/            设置页子模块
+    services/                   服务层
+    utils/                      工具与 i18n
+  server/                       本地代理服务
+    proxy/                      代理路由/中间件/配置
+    llm-proxy.mjs               代理入口
+  shared/                       主进程与代理共享配置
+assets/icons/                   应用图标
 ```
 
 ## ⚠️ 注意事项
 
 - 本项目主要面向本地使用，API Key 会在本地保存
 - 搜索增强需要额外的 Tavily Key
+- 记忆导出需要额外的 Mem0 API Key 与用户 ID
+
+## 🙏 致谢
+
+- 感谢 [Codex CLI](https://github.com/openai/codex) 提供的开发支持
+- 感谢 [Ollama](https://github.com/ollama/ollama) 提供的本地模型接口支持
+- 感谢 [Mem0](https://github.com/mem0ai/mem0) 提供对记忆能力与相关接口方案的支持
+- 感谢 [Tavily](https://github.com/tavily-ai/tavily-python) 提供的搜索能力接口支持

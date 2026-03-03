@@ -14,7 +14,8 @@ type TabsProps<T extends string> = {
   idPrefix?: string;
 };
 
-const TAB_BASE = 'rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors duration-160 ease-out';
+const TAB_BASE =
+  'rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors duration-160 ease-out';
 
 const TAB_STYLES = {
   active: 'bg-[var(--bg-2)] text-[var(--ink-1)] ring-1 ring-[var(--line-1)]',

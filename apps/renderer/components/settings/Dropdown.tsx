@@ -109,9 +109,7 @@ const Dropdown: React.FC<DropdownProps> = ({
               ref={menuRef}
               id={listboxId}
               className={`fixed z-[80] max-h-56 overflow-auto scrollbar-hide rounded-lg border border-[var(--line-1)] bg-[var(--bg-2)] p-1 transition-opacity transition-transform duration-120 ease-out motion-reduce:transition-none ${
-                menuReady
-                  ? 'opacity-100 pointer-events-auto'
-                  : 'opacity-0 pointer-events-none'
+                menuReady ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
               }`}
               style={{
                 left: position.left,

@@ -21,7 +21,8 @@ const SIZES: Record<ButtonSize, string> = {
   icon: 'h-8 w-8 flex items-center justify-center',
 };
 
-const BASE = 'rounded-lg font-medium transition-colors duration-160 ease-out disabled:opacity-50 disabled:cursor-not-allowed';
+const BASE =
+  'rounded-lg font-medium transition-colors duration-160 ease-out disabled:opacity-50 disabled:cursor-not-allowed';
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'ghost', size = 'md', className, type = 'button', ...props }, ref) => {

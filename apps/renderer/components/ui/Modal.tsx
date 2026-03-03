@@ -56,9 +56,8 @@ const Modal: React.FC<ModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    const previousActive = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    const previousActive =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const frame = requestAnimationFrame(() => {
       const focusable = getFocusableElements(dialogRef.current);

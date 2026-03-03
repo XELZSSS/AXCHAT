@@ -45,7 +45,8 @@ export const useStreamingMessages = ({
   const updateNearBottomState = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const distanceToBottom = container.scrollHeight - (container.scrollTop + container.clientHeight);
+    const distanceToBottom =
+      container.scrollHeight - (container.scrollTop + container.clientHeight);
     const nextIsNearBottom = distanceToBottom <= NEAR_BOTTOM_THRESHOLD_PX;
     isNearBottomRef.current = nextIsNearBottom;
     setShowScrollToBottom(!nextIsNearBottom && messagesRef.current.length > 0);

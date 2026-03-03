@@ -1,6 +1,6 @@
 import { ProviderId, TavilyConfig } from '../../types';
 
-export type ActiveSettingsTab = 'provider' | 'search' | 'shortcuts';
+export type ActiveSettingsTab = 'provider' | 'search' | 'memoryExport' | 'version' | 'shortcuts';
 
 export type SettingsModalState = {
   providerId: ProviderId;
@@ -9,8 +9,11 @@ export type SettingsModalState = {
   baseUrl?: string;
   customHeaders: Array<{ key: string; value: string }>;
   tavily: TavilyConfig;
+  mem0ApiKey: string;
+  mem0UserId: string;
   showApiKey: boolean;
   showTavilyKey: boolean;
+  showMem0ApiKey: boolean;
   toolCallMaxRounds: string;
   activeTab: ActiveSettingsTab;
 };

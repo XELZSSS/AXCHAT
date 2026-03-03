@@ -18,13 +18,7 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
     const tone = danger ? TONES.danger : active ? TONES.active : TONES.default;
 
     return (
-      <Button
-        ref={ref}
-        size="icon"
-        variant="subtle"
-        className={cn(tone, className)}
-        {...props}
-      />
+      <Button ref={ref} size="icon" variant="subtle" className={cn(tone, className)} {...props} />
     );
   }
 );

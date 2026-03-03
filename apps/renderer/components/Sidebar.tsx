@@ -1,5 +1,17 @@
 import React, { useRef } from 'react';
-import { Trash2, Settings, Search, Edit2, Check, X, Plus, Globe, Sun, Moon, MessageSquare } from 'lucide-react';
+import {
+  Trash2,
+  Settings,
+  Search,
+  Edit2,
+  Check,
+  X,
+  Plus,
+  Globe,
+  Sun,
+  Moon,
+  MessageSquare,
+} from 'lucide-react';
 import { ChatSession } from '../types';
 import { Language, t } from '../utils/i18n';
 import { Theme } from '../utils/theme';
@@ -102,9 +114,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
               {t('sidebar.noConversations')}
             </div>
           ) : filteredSessions.length === 0 ? (
-            <div className="px-2 py-2 text-sm text-[var(--ink-3)]">
-              {t('sidebar.noMatching')}
-            </div>
+            <div className="px-2 py-2 text-sm text-[var(--ink-3)]">{t('sidebar.noMatching')}</div>
           ) : (
             <div className="space-y-0.5">
               {filteredSessions.map((session) => (
