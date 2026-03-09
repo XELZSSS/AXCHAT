@@ -1,0 +1,43 @@
+import { ProviderId } from '../../types';
+import { createProvider } from './registry';
+import { ProviderChat } from './types';
+
+export class ProviderRouter {
+  private activeProviderId: ProviderId;
+  private activeProvider: ProviderChat;
+  private readonly providers = new Map<ProviderId, ProviderChat>();
+
+  private getOrCreateProvider(id: ProviderId): ProviderChat {
+    const cached = this.providers.get(id);
+    if (cached) {
+      return cached;
+    }
+
+    const provider = createProvider(id);
+    this.providers.set(id, provider);
+    return provider;
+  }
+
+  constructor(initialProvider: ProviderId = 'gemini') {
+    this.activeProviderId = initialProvider;
+    this.activeProvider = this.getOrCreateProvider(initialProvider);
+  }
+
+  getActiveProviderId(): ProviderId {
+    return this.activeProviderId;
+  }
+
+  getActiveProvider(): ProviderChat {
+    return this.activeProvider;
+  }
+
+  setActiveProvider(id: ProviderId): ProviderChat {
+    if (id === this.activeProviderId) {
+      return this.activeProvider;
+    }
+
+    this.activeProviderId = id;
+    this.activeProvider = this.getOrCreateProvider(id);
+    return this.activeProvider;
+  }
+}

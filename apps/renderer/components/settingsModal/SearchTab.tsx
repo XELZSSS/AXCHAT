@@ -1,0 +1,195 @@
+import React, { useCallback, useMemo } from 'react';
+import { TavilyConfig } from '../../types';
+import { t } from '../../utils/i18n';
+import Dropdown from '../settings/Dropdown';
+import { fullInputClass, getTavilySearchDepthOptions, getTavilyTopicOptions } from './constants';
+import { Button, Field, Input, Toggle } from '../ui';
+import { DEFAULT_MAX_TOOL_CALL_ROUNDS } from '../../services/providers/utils';
+import { DeleteOutlineIcon, VisibilityIcon, VisibilityOffIcon } from '../icons';
+
+type SearchTabProps = {
+  tavily: TavilyConfig;
+  showTavilyKey: boolean;
+  toolCallMaxRounds: string;
+  portalContainer: HTMLElement | null;
+  onSetTavilyField: <K extends keyof TavilyConfig>(key: K, value: TavilyConfig[K]) => void;
+  onToggleTavilyKeyVisibility: () => void;
+  onToolCallMaxRoundsChange: (value: string) => void;
+  onToolCallMaxRoundsBlur: () => void;
+};
+
+const SearchTab: React.FC<SearchTabProps> = ({
+  tavily,
+  showTavilyKey,
+  toolCallMaxRounds,
+  portalContainer,
+  onSetTavilyField,
+  onToggleTavilyKeyVisibility,
+  onToolCallMaxRoundsChange,
+  onToolCallMaxRoundsBlur,
+}) => {
+  const searchDepthOptions = useMemo(() => getTavilySearchDepthOptions(), []);
+  const topicOptions = useMemo(() => getTavilyTopicOptions(), []);
+  const tavilyKeyLabel = useMemo(
+    () => (showTavilyKey ? t('settings.apiKey.hide') : t('settings.apiKey.show')),
+    [showTavilyKey]
+  );
+
+  const handleApiKeyChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => onSetTavilyField('apiKey', event.target.value),
+    [onSetTavilyField]
+  );
+  const handleProjectIdChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) =>
+      onSetTavilyField('projectId', event.target.value),
+    [onSetTavilyField]
+  );
+  const handleMaxResultsChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) =>
+      onSetTavilyField('maxResults', event.target.value ? Number(event.target.value) : undefined),
+    [onSetTavilyField]
+  );
+  const handleIncludeAnswerChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) =>
+      onSetTavilyField('includeAnswer', event.target.checked),
+    [onSetTavilyField]
+  );
+  const handleClearApiKey = useCallback(() => onSetTavilyField('apiKey', ''), [onSetTavilyField]);
+
+  return (
+    <div className="space-y-4">
+      <Field label={t('settings.modal.tavily.title')}>
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <label className="text-xs text-[var(--ink-3)]">
+              {t('settings.modal.tavily.apiKey')}
+            </label>
+            <div className="relative">
+              <Input
+                type={showTavilyKey ? 'text' : 'password'}
+                value={tavily.apiKey ?? ''}
+                onChange={handleApiKeyChange}
+                className={`${fullInputClass} pr-20`}
+                compact
+                autoComplete="off"
+              />
+              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+                <Button
+                  onClick={onToggleTavilyKeyVisibility}
+                  variant="ghost"
+                  size="sm"
+                  className="!h-6 !w-6 !min-w-0 !p-0 flex items-center justify-center"
+                  aria-label={tavilyKeyLabel}
+                >
+                  {showTavilyKey ? (
+                    <VisibilityOffIcon sx={{ fontSize: 16 }} />
+                  ) : (
+                    <VisibilityIcon sx={{ fontSize: 16 }} />
+                  )}
+                </Button>
+                <Button
+                  onClick={handleClearApiKey}
+                  variant="ghost"
+                  size="sm"
+                  className="!h-6 !w-6 !min-w-0 !p-0 flex items-center justify-center hover:text-red-400"
+                  aria-label={t('settings.apiKey.clear')}
+                  title={t('settings.apiKey.clear')}
+                >
+                  <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs text-[var(--ink-3)]">
+              {t('settings.modal.tavily.projectId')}
+            </label>
+            <Input
+              type="text"
+              value={tavily.projectId ?? ''}
+              onChange={handleProjectIdChange}
+              className={fullInputClass}
+              compact
+              autoComplete="off"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+            <div className="space-y-2">
+              <label className="text-xs text-[var(--ink-3)]">
+                {t('settings.modal.tavily.searchDepth')}
+              </label>
+              <Dropdown
+                value={tavily.searchDepth ?? 'basic'}
+                options={searchDepthOptions}
+                onChange={(value) =>
+                  onSetTavilyField('searchDepth', value as import('../../types').TavilySearchDepth)
+                }
+                widthClassName="w-full"
+                portalContainer={portalContainer}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-[var(--ink-3)]">
+                {t('settings.modal.toolCallRounds')}
+              </label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={toolCallMaxRounds}
+                onChange={(event) =>
+                  onToolCallMaxRoundsChange(event.target.value.replace(/[^\d]/g, ''))
+                }
+                onBlur={onToolCallMaxRoundsBlur}
+                placeholder={String(DEFAULT_MAX_TOOL_CALL_ROUNDS)}
+                className={`${fullInputClass} text-xs`}
+                compact
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-[var(--ink-3)]">
+                {t('settings.modal.tavily.maxResults')}
+              </label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={tavily.maxResults ?? 5}
+                onChange={handleMaxResultsChange}
+                className={`${fullInputClass} text-xs`}
+                compact
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-[var(--ink-3)]">
+                {t('settings.modal.tavily.topic')}
+              </label>
+              <Dropdown
+                value={tavily.topic ?? 'general'}
+                options={topicOptions}
+                onChange={(value) =>
+                  onSetTavilyField('topic', value as import('../../types').TavilyTopic)
+                }
+                widthClassName="w-full"
+                portalContainer={portalContainer}
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-xs text-[var(--ink-3)]">
+            <Toggle checked={tavily.includeAnswer ?? true} onChange={handleIncludeAnswerChange} />
+            {t('settings.modal.tavily.includeAnswer')}
+          </label>
+        </div>
+      </Field>
+    </div>
+  );
+};
+
+export default SearchTab;
