@@ -250,7 +250,7 @@ export async function* streamStandardChatCompletions({
   }
 }
 
-type StreamWithToolCallLoopOptions = {
+export type StreamWithToolCallLoopOptions = {
   client: OpenAI;
   model: string;
   messages: OpenAIChatMessages;
@@ -317,4 +317,25 @@ export async function* streamWithToolCallLoop({
   })) {
     yield chunk;
   }
+}
+
+type StreamWithToolCallLoopAndAccumulateOptions = StreamWithToolCallLoopOptions & {
+  wrapReasoning?: (reasoning: string) => string;
+};
+
+export async function* streamWithToolCallLoopAndAccumulate({
+  wrapReasoning = (reasoning: string) => `<think>${reasoning}</think>`,
+  ...options
+}: StreamWithToolCallLoopAndAccumulateOptions): AsyncGenerator<string, string, unknown> {
+  let fullResponse = '';
+  for await (const chunk of streamWithToolCallLoop(options)) {
+    if (chunk.reasoning) {
+      yield wrapReasoning(chunk.reasoning);
+    }
+    if (chunk.content) {
+      fullResponse += chunk.content;
+      yield chunk.content;
+    }
+  }
+  return fullResponse;
 }

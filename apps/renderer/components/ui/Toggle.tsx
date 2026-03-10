@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { cn } from './cn';
 
 type ToggleProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>;
@@ -16,20 +16,17 @@ const BASE = [
 
 const Toggle = React.memo(
   React.forwardRef<HTMLInputElement, ToggleProps>(
-    ({ className, checked, defaultChecked, ...props }, ref) => {
-      const resolvedChecked = useMemo(() => checked ?? false, [checked]);
-      return (
-        <input
-          ref={ref}
-          type="checkbox"
-          role="switch"
-          checked={resolvedChecked}
-          defaultChecked={defaultChecked}
-          className={cn(BASE, className)}
-          {...props}
-        />
-      );
-    }
+    ({ className, checked, defaultChecked, ...props }, ref) => (
+      <input
+        ref={ref}
+        type="checkbox"
+        role="switch"
+        checked={checked ?? false}
+        defaultChecked={defaultChecked}
+        className={cn(BASE, className)}
+        {...props}
+      />
+    )
   )
 );
 

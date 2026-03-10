@@ -22,6 +22,16 @@ export const parseHeaderValue = (value) => {
   return String(value);
 };
 
+const normalizeHeaderString = (value) => parseHeaderValue(value).trim();
+
+const safeJsonParse = (value) => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
 export const allowedOrigins = new Set(DEFAULT_ALLOWED_ORIGINS);
 const additionalAllowedOrigins = (process.env.MINIMAX_PROXY_ALLOWED_ORIGINS ?? '')
   .split(',')
@@ -52,7 +62,7 @@ export const blockedHeaders = new Set([
 ]);
 
 export const normalizeTargetUrl = (value) => {
-  const raw = parseHeaderValue(value).trim();
+  const raw = normalizeHeaderString(value);
   if (!raw) return null;
   try {
     const url = new URL(raw);
@@ -65,20 +75,16 @@ export const normalizeTargetUrl = (value) => {
 };
 
 export const parseCustomHeaders = (value) => {
-  const raw = parseHeaderValue(value);
+  const raw = normalizeHeaderString(value);
   if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((header) => ({
-        key: String(header?.key ?? '').trim(),
-        value: String(header?.value ?? '').trim(),
-      }))
-      .filter((header) => header.key && header.value);
-  } catch {
-    return [];
-  }
+  const parsed = safeJsonParse(raw);
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .map((header) => ({
+      key: String(header?.key ?? '').trim(),
+      value: String(header?.value ?? '').trim(),
+    }))
+    .filter((header) => header.key && header.value);
 };
 
 export const buildForwardHeaders = (
@@ -92,7 +98,7 @@ export const buildForwardHeaders = (
     next[key] = value;
   }
 
-  const key = parseHeaderValue((headers ?? {})['x-minimax-api-key']).trim();
+  const key = normalizeHeaderString((headers ?? {})['x-minimax-api-key']);
   if (key) {
     next.authorization = `Bearer ${key}`;
     for (const existingHeaderKey of Object.keys(next)) {

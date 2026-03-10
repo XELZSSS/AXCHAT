@@ -4,7 +4,8 @@ import { t } from '../../utils/i18n';
 import Dropdown, { DropdownOption } from '../settings/Dropdown';
 import { fullInputClass, smInputClass, resolveBaseUrlForRegion } from './constants';
 import { Button, Field, Input } from '../ui';
-import { DeleteOutlineIcon, VisibilityIcon, VisibilityOffIcon } from '../icons';
+import { DeleteOutlineIcon } from '../icons';
+import SecretInput from './SecretInput';
 
 type ProviderTabProps = {
   providerId: ProviderId;
@@ -123,45 +124,16 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
         </div>
       </Field>
 
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-[var(--ink-2)]">
-          {t('settings.modal.apiKey')}
-        </label>
-        <div className="relative">
-          <Input
-            type={showApiKey ? 'text' : 'password'}
-            value={apiKey}
-            onChange={handleApiKeyChange}
-            className={`${fullInputClass} pr-20`}
-            autoComplete="off"
-          />
-          <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-            <Button
-              onClick={onToggleApiKeyVisibility}
-              variant="ghost"
-              size="sm"
-              className="!h-6 !w-6 !min-w-0 !p-0 flex items-center justify-center"
-              aria-label={apiKeyVisibilityLabel}
-            >
-              {showApiKey ? (
-                <VisibilityOffIcon sx={{ fontSize: 16 }} />
-              ) : (
-                <VisibilityIcon sx={{ fontSize: 16 }} />
-              )}
-            </Button>
-            <Button
-              onClick={onClearApiKey}
-              variant="ghost"
-              size="sm"
-              className="!h-6 !w-6 !min-w-0 !p-0 flex items-center justify-center hover:text-red-400"
-              aria-label={t('settings.apiKey.clear')}
-              title={t('settings.apiKey.clear')}
-            >
-              <DeleteOutlineIcon sx={{ fontSize: 16 }} />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <SecretInput
+        label={t('settings.modal.apiKey')}
+        value={apiKey}
+        onChange={handleApiKeyChange}
+        showSecret={showApiKey}
+        onToggleVisibility={onToggleApiKeyVisibility}
+        onClear={onClearApiKey}
+        visibilityLabel={apiKeyVisibilityLabel}
+        inputClassName={`${fullInputClass} pr-20`}
+      />
 
       {(supportsBaseUrl || supportsCustomHeaders) && (
         <div className="space-y-3">

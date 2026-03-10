@@ -28,6 +28,8 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const draftSaveTimerRef = useRef<number | null>(null);
+  const lastHeightRef = useRef<number | null>(null);
+  const isInputDisabled = disabled && !isStreaming;
 
   const clearDraftTimer = useCallback(() => {
     if (draftSaveTimerRef.current !== null) {
@@ -55,34 +57,30 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
     }
   }, []);
 
+  const updateChatInputHeight = useCallback(() => {
+    if (!containerRef.current) return;
+    const nextHeight = containerRef.current.offsetHeight;
+    if (lastHeightRef.current === nextHeight) return;
+    lastHeightRef.current = nextHeight;
+    document.documentElement.style.setProperty('--chat-input-height', `${nextHeight}px`);
+  }, []);
+
   useEffect(() => {
     adjustHeight();
-    if (!containerRef.current) return;
-    document.documentElement.style.setProperty(
-      '--chat-input-height',
-      `${containerRef.current.offsetHeight}px`
-    );
   }, [adjustHeight, input]);
 
   useEffect(() => {
-    const updateHeight = () => {
-      if (!containerRef.current) return;
-      document.documentElement.style.setProperty(
-        '--chat-input-height',
-        `${containerRef.current.offsetHeight}px`
-      );
-    };
-    updateHeight();
-    const observer = new ResizeObserver(() => updateHeight());
+    updateChatInputHeight();
+    const observer = new ResizeObserver(() => updateChatInputHeight());
     if (containerRef.current) {
       observer.observe(containerRef.current);
     }
-    window.addEventListener('resize', updateHeight);
+    window.addEventListener('resize', updateChatInputHeight);
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('resize', updateChatInputHeight);
     };
-  }, []);
+  }, [updateChatInputHeight]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -100,7 +98,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
       e?.preventDefault();
-      if (!input.trim() || (disabled && !isStreaming)) return;
+      if (!input.trim() || isInputDisabled) return;
 
       if (isStreaming) {
         onStop();
@@ -112,7 +110,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
       clearDraftTimer();
       removeAppStorage('inputDraft');
     },
-    [clearDraftTimer, disabled, input, isStreaming, onSend, onStop]
+    [clearDraftTimer, input, isInputDisabled, isStreaming, onSend, onStop]
   );
 
   const handleKeyDown = useCallback(
@@ -155,28 +153,26 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           className="w-full bg-transparent text-[var(--ink-1)] placeholder:text-[var(--ink-3)] text-sm leading-6 px-3 py-2 max-h-[150px] resize-none focus:outline-none scrollbar-hide"
           rows={1}
-          disabled={disabled && !isStreaming}
+          disabled={isInputDisabled}
         />
         <div className="flex shrink-0 items-center gap-1 pr-0.5">
           <button
             type="button"
             onClick={onToggleSearch}
-            disabled={!searchAvailable || (disabled && !isStreaming)}
+            disabled={!searchAvailable || isInputDisabled}
             aria-pressed={searchEnabled}
             aria-label={searchToggleLabel}
             title={searchToggleLabel}
             className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-160 ease-out ${
               searchEnabled ? 'text-[#3b82f6]' : 'text-[var(--ink-3)] hover:text-[#3b82f6]'
-            } ${
-              searchAvailable && !(disabled && !isStreaming) ? '' : 'opacity-50 cursor-not-allowed'
-            }`}
+            } ${searchAvailable && !isInputDisabled ? '' : 'opacity-50 cursor-not-allowed'}`}
           >
             <PublicIcon sx={{ fontSize: 18 }} />
           </button>
           <button
             type="button"
             onClick={handleSendClick}
-            disabled={(!input.trim() && !isStreaming) || (disabled && !isStreaming)}
+            disabled={(!input.trim() && !isStreaming) || isInputDisabled}
             aria-label={sendActionLabel}
             title={sendActionLabel}
             className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-160 ease-out ${
@@ -184,7 +180,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
                 ? 'text-[#3b82f6] hover:text-[#2563eb]'
                 : 'text-[var(--ink-3)]'
             } ${
-              (!input.trim() && !isStreaming) || (disabled && !isStreaming)
+              (!input.trim() && !isStreaming) || isInputDisabled
                 ? 'opacity-50 cursor-not-allowed'
                 : ''
             }`}

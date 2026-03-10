@@ -1,9 +1,10 @@
-/* global __dirname, process, URL */
+/* global __dirname, process */
 const { app, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
+const { parseExternalHttpUrl, shouldOpenExternalUrl } = require('../../shared/external-url.cjs');
 const {
   readAppStorageValue,
   writeAppStorageValue,
@@ -12,8 +13,6 @@ const {
 const { getSecretStorageInfo } = require('../storage/secrets.cjs');
 
 const execFileAsync = promisify(execFile);
-
-const DEV_SERVER_FALLBACK_URL = 'http://localhost:3000';
 
 const resolveOfficialCatalogSyncScript = () => {
   const rootDir = path.resolve(__dirname, '..', '..', '..');
@@ -40,35 +39,6 @@ const resolveOfficialCatalogSyncCwd = () => {
   }
 
   return path.resolve(__dirname, '..', '..', '..');
-};
-
-const parseExternalHttpUrl = (url) => {
-  if (!url || typeof url !== 'string') return null;
-  const trimmed = url.trim();
-  if (!trimmed) return null;
-
-  try {
-    const parsed = new URL(trimmed);
-    const protocol = parsed.protocol.toLowerCase();
-    if (protocol !== 'http:' && protocol !== 'https:') {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-};
-
-const shouldOpenExternalUrl = (url, isDev) => {
-  const parsed = parseExternalHttpUrl(url);
-  if (!parsed) return false;
-
-  if (isDev) {
-    const devOrigin = new URL(process.env.VITE_DEV_SERVER_URL ?? DEV_SERVER_FALLBACK_URL).origin;
-    return parsed.origin !== devOrigin;
-  }
-
-  return true;
 };
 
 const buildSystemHandlers = ({
@@ -110,7 +80,7 @@ const buildSystemHandlers = ({
   'app:open-external': async (_event, url) => {
     const target = String(url ?? '').trim();
     if (!target) return;
-    if (!shouldOpenExternalUrl(target, !app.isPackaged)) {
+    if (!shouldOpenExternalUrl(target, !app.isPackaged, process.env.VITE_DEV_SERVER_URL)) {
       throw new Error(
         'Blocked external URL: only http/https URLs outside the app origin are allowed'
       );
@@ -163,6 +133,4 @@ const buildSystemHandlers = ({
 
 module.exports = {
   buildSystemHandlers,
-  parseExternalHttpUrl,
-  shouldOpenExternalUrl,
 };

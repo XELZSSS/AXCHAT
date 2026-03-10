@@ -3,16 +3,8 @@ const { ensureDatabase } = require('./db.cjs');
 const { randomUUID } = require('crypto');
 
 const ACTIVE_SESSION_ID_KEY = 'activeSessionId';
-const VALID_PROVIDER_IDS = new Set([
-  'gemini',
-  'openai',
-  'openai-compatible',
-  'xai',
-  'deepseek',
-  'glm',
-  'minimax',
-  'moonshot',
-]);
+const { PROVIDER_IDS } = require('../../shared/provider-ids.cjs');
+const VALID_PROVIDER_IDS = new Set(PROVIDER_IDS);
 const VALID_MESSAGE_ROLES = new Set(['user', 'model']);
 const DEFAULT_PROVIDER_ID = 'gemini';
 
@@ -136,7 +128,9 @@ const normalizeMessage = (value, index) => {
     text: typeof value.text === 'string' ? value.text : '',
     timestamp: normalizeTimestamp(value.timestamp),
     reasoning:
-      typeof value.reasoning === 'string' && value.reasoning.length > 0 ? value.reasoning : undefined,
+      typeof value.reasoning === 'string' && value.reasoning.length > 0
+        ? value.reasoning
+        : undefined,
     isError: Boolean(value.isError),
     tokenUsage: normalizeTokenUsage(value.tokenUsage),
     toolCalls: Array.isArray(value.toolCalls)
@@ -174,7 +168,8 @@ const normalizeMessageRow = (row) => ({
   role: row.role,
   text: row.text,
   timestamp: normalizeTimestamp(row.timestamp, row.created_at),
-  reasoning: typeof row.reasoning === 'string' && row.reasoning.length > 0 ? row.reasoning : undefined,
+  reasoning:
+    typeof row.reasoning === 'string' && row.reasoning.length > 0 ? row.reasoning : undefined,
   isError: Boolean(row.is_error),
   tokenUsage: parseJsonField(row.token_usage_json, undefined),
   toolCalls: parseJsonField(row.tool_calls_json, undefined),

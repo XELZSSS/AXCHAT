@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { cn } from './cn';
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
@@ -18,10 +18,13 @@ const SIZES = {
 
 const Input = React.memo(
   React.forwardRef<HTMLInputElement, InputProps>(
-    ({ className, compact = false, ...props }, ref) => {
-      const sizeClass = useMemo(() => (compact ? SIZES.compact : SIZES.default), [compact]);
-      return <input ref={ref} className={cn(BASE, sizeClass, className)} {...props} />;
-    }
+    ({ className, compact = false, ...props }, ref) => (
+      <input
+        ref={ref}
+        className={cn(BASE, compact ? SIZES.compact : SIZES.default, className)}
+        {...props}
+      />
+    )
   )
 );
 

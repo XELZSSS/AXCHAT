@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { ChatMessage, ProviderId, Role, TavilyConfig } from '../../types';
 import type { RequestPolicy } from './requestPolicy';
 import { OpenAIStyleProviderBase } from './openaiBase';
-import { ToolLoopOverrides, streamWithToolCallLoop } from './openaiChatHelpers';
+import { ToolLoopOverrides, streamWithToolCallLoopAndAccumulate } from './openaiChatHelpers';
 import { getProxyAuthHeadersForTarget } from './proxy';
 import { buildOpenAITavilyTools, getDefaultTavilyConfig, normalizeTavilyConfig } from './tavily';
 import { normalizeCustomHeaders } from './headerUtils';
@@ -190,11 +190,9 @@ export abstract class OpenAIProxyCompatibleProviderBase extends OpenAIStyleProvi
     const nextHistory = [...this.history, userMessage];
     const messages = this.buildMessages(nextHistory, this.id, this.modelName);
 
-    let fullResponse = '';
-
     try {
       const tools = this.buildTools();
-      for await (const chunk of streamWithToolCallLoop({
+      const fullResponse = yield* streamWithToolCallLoopAndAccumulate({
         client,
         model: this.modelName,
         messages,
@@ -205,17 +203,9 @@ export abstract class OpenAIProxyCompatibleProviderBase extends OpenAIStyleProvi
         buildToolMessages: this.buildToolMessages.bind(this),
         emitPreflightMessageWhenNoToolCalls: true,
         ...this.getToolLoopOverrides(),
-      })) {
-        if (chunk.reasoning) {
-          yield `<think>${chunk.reasoning}</think>`;
-        }
-        if (chunk.content) {
-          fullResponse += chunk.content;
-          yield chunk.content;
-        }
-      }
+      });
 
-      const modelMessage = this.createModelMessage(fullResponse);
+      const modelMessage = this.createModelMessage(fullResponse ?? '');
       this.history = [...nextHistory, modelMessage];
     } catch (error) {
       console.error(`Error in ${this.logLabel} stream:`, error);

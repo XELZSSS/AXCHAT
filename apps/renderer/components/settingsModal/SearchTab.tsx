@@ -3,9 +3,9 @@ import { TavilyConfig } from '../../types';
 import { t } from '../../utils/i18n';
 import Dropdown from '../settings/Dropdown';
 import { fullInputClass, getTavilySearchDepthOptions, getTavilyTopicOptions } from './constants';
-import { Button, Field, Input, Toggle } from '../ui';
+import { Field, Input, Toggle } from '../ui';
 import { DEFAULT_MAX_TOOL_CALL_ROUNDS } from '../../services/providers/utils';
-import { DeleteOutlineIcon, VisibilityIcon, VisibilityOffIcon } from '../icons';
+import SecretInput from './SecretInput';
 
 type SearchTabProps = {
   tavily: TavilyConfig;
@@ -60,46 +60,18 @@ const SearchTab: React.FC<SearchTabProps> = ({
     <div className="space-y-4">
       <Field label={t('settings.modal.tavily.title')}>
         <div className="space-y-3">
-          <div className="space-y-2">
-            <label className="text-xs text-[var(--ink-3)]">
-              {t('settings.modal.tavily.apiKey')}
-            </label>
-            <div className="relative">
-              <Input
-                type={showTavilyKey ? 'text' : 'password'}
-                value={tavily.apiKey ?? ''}
-                onChange={handleApiKeyChange}
-                className={`${fullInputClass} pr-20`}
-                compact
-                autoComplete="off"
-              />
-              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-                <Button
-                  onClick={onToggleTavilyKeyVisibility}
-                  variant="ghost"
-                  size="sm"
-                  className="!h-6 !w-6 !min-w-0 !p-0 flex items-center justify-center"
-                  aria-label={tavilyKeyLabel}
-                >
-                  {showTavilyKey ? (
-                    <VisibilityOffIcon sx={{ fontSize: 16 }} />
-                  ) : (
-                    <VisibilityIcon sx={{ fontSize: 16 }} />
-                  )}
-                </Button>
-                <Button
-                  onClick={handleClearApiKey}
-                  variant="ghost"
-                  size="sm"
-                  className="!h-6 !w-6 !min-w-0 !p-0 flex items-center justify-center hover:text-red-400"
-                  aria-label={t('settings.apiKey.clear')}
-                  title={t('settings.apiKey.clear')}
-                >
-                  <DeleteOutlineIcon sx={{ fontSize: 16 }} />
-                </Button>
-              </div>
-            </div>
-          </div>
+          <SecretInput
+            label={t('settings.modal.tavily.apiKey')}
+            labelClassName="text-xs text-[var(--ink-3)]"
+            value={tavily.apiKey ?? ''}
+            onChange={handleApiKeyChange}
+            showSecret={showTavilyKey}
+            onToggleVisibility={onToggleTavilyKeyVisibility}
+            onClear={handleClearApiKey}
+            visibilityLabel={tavilyKeyLabel}
+            inputClassName={`${fullInputClass} pr-20`}
+            compact
+          />
 
           <div className="space-y-2">
             <label className="text-xs text-[var(--ink-3)]">

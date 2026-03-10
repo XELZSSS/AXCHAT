@@ -1,10 +1,10 @@
 import type { ChatSession } from '../types';
-import { listProviderIds } from './providers/registry';
 import { formatMessageTime } from '../utils/time';
+import { PROVIDER_IDS as RAW_PROVIDER_IDS } from '../../shared/provider-ids';
 
 const DEFAULT_PROVIDER_ID = 'gemini' as const;
 const DEFAULT_MODEL_NAME = 'gemini-3.1-pro-preview';
-const VALID_PROVIDER_IDS = new Set(listProviderIds());
+const VALID_PROVIDER_IDS = new Set(RAW_PROVIDER_IDS as unknown as string[]);
 
 export type StoredSession = Partial<ChatSession> &
   Pick<ChatSession, 'id' | 'title' | 'createdAt' | 'updatedAt'>;

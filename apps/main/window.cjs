@@ -1,8 +1,9 @@
-/* global setTimeout, clearTimeout, process, URL, Buffer */
+/* global setTimeout, clearTimeout, process, Buffer */
 const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { listAppStorageValues } = require('./storage/appStorage.cjs');
+const { shouldOpenExternalUrl } = require('../shared/external-url.cjs');
 
 const WINDOW_STATE_FILE = path.join(app.getPath('userData'), 'window-state.json');
 const THEME_STATE_FILE = path.join(app.getPath('userData'), 'theme-state.json');
@@ -147,33 +148,10 @@ const encodeAppStorageBootstrap = () => {
   return Buffer.from(JSON.stringify(snapshot), 'utf8').toString('base64url');
 };
 
-const shouldOpenExternally = (url, isDev) => {
-  if (!url || typeof url !== 'string') return false;
-  const trimmed = url.trim();
-  if (!trimmed) return false;
-
-  try {
-    const parsed = new URL(trimmed);
-    const protocol = parsed.protocol.toLowerCase();
-    if (protocol !== 'http:' && protocol !== 'https:') {
-      return false;
-    }
-
-    if (isDev) {
-      const devOrigin = new URL(process.env.VITE_DEV_SERVER_URL ?? 'http://localhost:3000').origin;
-      return parsed.origin !== devOrigin;
-    }
-
-    return true;
-  } catch {
-    return false;
-  }
-};
-
 const registerExternalNavigationGuards = (win, isDev) => {
   // Route all external window.open requests to the system browser.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (shouldOpenExternally(url, isDev)) {
+    if (shouldOpenExternalUrl(url, isDev, process.env.VITE_DEV_SERVER_URL)) {
       void shell.openExternal(url);
       return { action: 'deny' };
     }
@@ -182,7 +160,7 @@ const registerExternalNavigationGuards = (win, isDev) => {
 
   // Keep the app shell locked and route external navigations out of process.
   win.webContents.on('will-navigate', (event, url) => {
-    if (!shouldOpenExternally(url, isDev)) return;
+    if (!shouldOpenExternalUrl(url, isDev, process.env.VITE_DEV_SERVER_URL)) return;
     event.preventDefault();
     void shell.openExternal(url);
   });

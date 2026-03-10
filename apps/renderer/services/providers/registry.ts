@@ -11,6 +11,7 @@ import {
 } from './models';
 import { ProviderChat, ProviderDefinition } from './types';
 import { buildProviderModelConfig } from './modelConfig';
+import { PROVIDER_IDS as RAW_PROVIDER_IDS } from '../../../shared/provider-ids';
 import type { RequestPolicy } from './requestPolicy';
 
 type ProviderMeta = {
@@ -29,16 +30,7 @@ type ProviderDefinitionLoader = () => Promise<ProviderDefinition>;
 
 type ProviderCustomHeader = { key: string; value: string };
 
-const PROVIDER_IDS: ProviderId[] = [
-  'gemini',
-  'openai',
-  'openai-compatible',
-  'xai',
-  'deepseek',
-  'glm',
-  'minimax',
-  'moonshot',
-];
+const PROVIDER_IDS = RAW_PROVIDER_IDS as unknown as ProviderId[];
 
 const providerModelSpecs: Record<ProviderId, ProviderModelSpec> = {
   gemini: {
