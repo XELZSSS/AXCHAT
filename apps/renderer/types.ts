@@ -1,3 +1,5 @@
+import { PROVIDER_IDS } from '../shared/provider-ids';
+
 export enum Role {
   User = 'user',
   Model = 'model',
@@ -49,15 +51,7 @@ export interface ChatState {
   isLoading: boolean;
 }
 
-export type ProviderId =
-  | 'gemini'
-  | 'openai'
-  | 'openai-compatible'
-  | 'xai'
-  | 'deepseek'
-  | 'glm'
-  | 'minimax'
-  | 'moonshot';
+export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 export interface ChatSession {
   id: string;
@@ -71,6 +65,14 @@ export interface ChatSession {
 
 export type TavilySearchDepth = 'basic' | 'advanced' | 'fast' | 'ultra-fast';
 export type TavilyTopic = 'general' | 'news' | 'finance';
+export type GeminiEmbeddingTaskType =
+  | 'SEMANTIC_SIMILARITY'
+  | 'CLASSIFICATION'
+  | 'CLUSTERING'
+  | 'RETRIEVAL_DOCUMENT'
+  | 'RETRIEVAL_QUERY'
+  | 'QUESTION_ANSWERING'
+  | 'FACT_VERIFICATION';
 
 export interface TavilyConfig {
   apiKey?: string;
@@ -79,6 +81,13 @@ export interface TavilyConfig {
   maxResults?: number;
   topic?: TavilyTopic;
   includeAnswer?: boolean;
+}
+
+export interface GeminiEmbeddingConfig {
+  model?: string;
+  outputDimensionality?: number;
+  taskType?: GeminiEmbeddingTaskType;
+  title?: string;
 }
 
 export interface ProviderError {

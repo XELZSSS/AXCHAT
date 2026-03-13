@@ -6,7 +6,7 @@ const ACTIVE_SESSION_ID_KEY = 'activeSessionId';
 const { PROVIDER_IDS } = require('../../shared/provider-ids.cjs');
 const VALID_PROVIDER_IDS = new Set(PROVIDER_IDS);
 const VALID_MESSAGE_ROLES = new Set(['user', 'model']);
-const DEFAULT_PROVIDER_ID = 'gemini';
+const DEFAULT_PROVIDER_ID = PROVIDER_IDS[0] ?? 'gemini';
 
 const parseJsonField = (value, fallback) => {
   if (typeof value !== 'string' || value.length === 0) {

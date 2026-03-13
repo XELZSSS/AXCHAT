@@ -1,7 +1,8 @@
-import { ChatMessage, ProviderId, TavilyConfig } from '../../types';
+import { ChatMessage, GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '../../types';
 import { ProviderSettings } from '../providers/defaults';
 import type { RequestPolicy } from '../providers/requestPolicy';
 import { ProviderRouter } from '../providers/router';
+import { ProviderResponseMetadata } from '../providers/types';
 import { ProviderChat } from '../providers/types';
 
 export class ProviderRuntime {
@@ -22,9 +23,26 @@ export class ProviderRuntime {
     return this.provider.getId();
   }
 
-  setProvider(providerId: ProviderId): void {
+  private resetHistorySyncState(): void {
     this.historySyncGeneration += 1;
     this.latestHistorySyncRequest = null;
+  }
+
+  private syncProviderValue<T>(
+    currentValue: T,
+    nextValue: T,
+    apply: (value: T) => void,
+    isEqual: (left: T, right: T) => boolean = Object.is
+  ): void {
+    if (isEqual(currentValue, nextValue)) {
+      return;
+    }
+
+    apply(nextValue);
+  }
+
+  setProvider(providerId: ProviderId): void {
+    this.resetHistorySyncState();
     this.provider = this.router.setActiveProvider(providerId);
   }
 
@@ -61,49 +79,64 @@ export class ProviderRuntime {
     return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
   }
 
+  private isEmbeddingEqual(
+    a: GeminiEmbeddingConfig | undefined,
+    b: GeminiEmbeddingConfig | undefined
+  ): boolean {
+    return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  }
+
   applyProviderSettings(providerId: ProviderId, settings: ProviderSettings): void {
     if (this.provider.getId() !== providerId) {
       this.provider = this.router.setActiveProvider(providerId);
     }
 
-    const nextApiKey = settings?.apiKey;
-    if (this.provider.getApiKey() !== nextApiKey) {
+    this.syncProviderValue(this.provider.getApiKey(), settings?.apiKey, (nextApiKey) => {
       this.provider.setApiKey(nextApiKey);
-    }
+    });
 
-    const nextModel = settings?.modelName ?? '';
-    if (this.provider.getModelName() !== nextModel) {
+    this.syncProviderValue(this.provider.getModelName(), settings?.modelName ?? '', (nextModel) => {
       this.provider.setModelName(nextModel);
-    }
+    });
 
     if (this.provider.setBaseUrl) {
-      const currentBaseUrl = this.provider.getBaseUrl?.();
-      const nextBaseUrl = settings?.baseUrl;
-      if (currentBaseUrl !== nextBaseUrl) {
-        this.provider.setBaseUrl(nextBaseUrl);
-      }
+      this.syncProviderValue(
+        this.provider.getBaseUrl?.(),
+        settings?.baseUrl,
+        (nextBaseUrl) => this.provider.setBaseUrl?.(nextBaseUrl)
+      );
     }
 
     if (this.provider.setCustomHeaders) {
-      const currentHeaders = this.provider.getCustomHeaders?.();
-      const nextHeaders = settings?.customHeaders ?? [];
-      if (!this.areHeadersEqual(currentHeaders, nextHeaders)) {
-        this.provider.setCustomHeaders(nextHeaders);
-      }
+      this.syncProviderValue(
+        this.provider.getCustomHeaders?.(),
+        settings?.customHeaders ?? [],
+        (nextHeaders) => this.provider.setCustomHeaders?.(nextHeaders),
+        this.areHeadersEqual
+      );
     }
 
     if (this.provider.setTavilyConfig) {
-      const currentTavily = this.provider.getTavilyConfig?.();
-      const nextTavily = this.searchEnabled ? settings?.tavily : undefined;
-      if (!this.isTavilyEqual(currentTavily, nextTavily)) {
-        this.provider.setTavilyConfig(nextTavily);
-      }
+      this.syncProviderValue(
+        this.provider.getTavilyConfig?.(),
+        this.searchEnabled ? settings?.tavily : undefined,
+        (nextTavily) => this.provider.setTavilyConfig?.(nextTavily),
+        this.isTavilyEqual
+      );
+    }
+
+    if (this.provider.setEmbeddingConfig) {
+      this.syncProviderValue(
+        this.provider.getEmbeddingConfig?.(),
+        settings?.embedding,
+        (nextEmbedding) => this.provider.setEmbeddingConfig?.(nextEmbedding),
+        this.isEmbeddingEqual
+      );
     }
   }
 
   resetChat(): void {
-    this.historySyncGeneration += 1;
-    this.latestHistorySyncRequest = null;
+    this.resetHistorySyncState();
     this.provider.resetChat();
   }
 
@@ -154,5 +187,9 @@ export class ProviderRuntime {
     requestPolicy?: RequestPolicy
   ): AsyncGenerator<string, void, unknown> {
     yield* this.provider.sendMessageStream(message, signal, requestPolicy);
+  }
+
+  consumePendingResponseMetadata(): ProviderResponseMetadata | undefined {
+    return this.provider.consumePendingResponseMetadata?.();
   }
 }

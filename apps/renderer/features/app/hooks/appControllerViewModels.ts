@@ -22,7 +22,6 @@ type UseSettingsModalPropsOptions = {
   handleSaveSettings: AppSettingsState['handleSaveSettings'];
   appVersion: string;
   updaterStatus: import('../../../services/updaterClient').UpdaterStatus;
-  secretStorageInfo: { mode: 'secure' | 'plain'; backend: string };
 };
 
 export const useSettingsModalProps = ({
@@ -36,7 +35,6 @@ export const useSettingsModalProps = ({
   handleSaveSettings,
   appVersion,
   updaterStatus,
-  secretStorageInfo,
 }: UseSettingsModalPropsOptions) => {
   return useMemo(
     () => ({
@@ -49,10 +47,10 @@ export const useSettingsModalProps = ({
       baseUrl: currentProviderSettings?.baseUrl,
       customHeaders: currentProviderSettings?.customHeaders,
       tavily: currentProviderSettings?.tavily,
+      embedding: currentProviderSettings?.embedding,
       onSave: handleSaveSettings,
       appVersion,
       updaterStatus,
-      secretStorageInfo,
     }),
     [
       appVersion,
@@ -64,7 +62,6 @@ export const useSettingsModalProps = ({
       handleSaveSettings,
       isSettingsOpen,
       providerSettings,
-      secretStorageInfo,
       updaterStatus,
     ]
   );

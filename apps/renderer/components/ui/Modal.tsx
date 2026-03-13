@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import type { KeyboardEvent, MouseEvent, ReactNode, Ref } from 'react';
 import { cn } from './cn';
 
 type ModalProps = {
   isOpen: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
-  overlayRef?: React.RefObject<HTMLDivElement>;
+  overlayRef?: Ref<HTMLDivElement>;
+  overlayClassName?: string;
   onClose?: () => void;
   ariaLabelledBy?: string;
   ariaDescribedBy?: string;
@@ -21,15 +23,19 @@ const getFocusableElements = (container: HTMLElement | null): HTMLElement[] => {
   );
 };
 
-const Modal: React.FC<ModalProps> = ({
+const shouldLoopFocus = (active: HTMLElement | null, target: HTMLElement, container: HTMLElement) =>
+  !active || active === target || !container.contains(active);
+
+const Modal = ({
   isOpen,
   children,
   className,
   overlayRef,
+  overlayClassName,
   onClose,
   ariaLabelledBy,
   ariaDescribedBy,
-}) => {
+}: ModalProps) => {
   const fallbackOverlayRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const resolvedOverlayRef = overlayRef ?? fallbackOverlayRef;
@@ -51,7 +57,7 @@ const Modal: React.FC<ModalProps> = ({
   }, [isOpen]);
 
   const handleOverlayMouseDown = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
+    (event: MouseEvent<HTMLDivElement>) => {
       if (event.button !== 0) return;
       if (event.target === event.currentTarget) onClose?.();
     },
@@ -59,7 +65,7 @@ const Modal: React.FC<ModalProps> = ({
   );
 
   const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
+    (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose?.();
@@ -78,14 +84,16 @@ const Modal: React.FC<ModalProps> = ({
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
 
       if (event.shiftKey) {
-        if (!active || active === first || !dialogRef.current?.contains(active)) {
+        if (shouldLoopFocus(active, first, dialog)) {
           event.preventDefault();
           last.focus();
         }
       } else {
-        if (!active || active === last || !dialogRef.current?.contains(active)) {
+        if (shouldLoopFocus(active, last, dialog)) {
           event.preventDefault();
           first.focus();
         }
@@ -101,7 +109,8 @@ const Modal: React.FC<ModalProps> = ({
       ref={resolvedOverlayRef}
       aria-hidden={!isOpen}
       className={cn(
-        'fixed inset-0 z-70 flex items-center justify-center bg-black/80 p-4 titlebar-no-drag'
+        'fixed inset-0 z-70 flex items-center justify-center p-4 titlebar-no-drag',
+        overlayClassName ?? 'bg-[var(--overlay-bg)]'
       )}
       onMouseDown={handleOverlayMouseDown}
       onKeyDown={handleKeyDown}

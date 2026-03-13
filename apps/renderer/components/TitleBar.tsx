@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { t } from '../utils/i18n';
 
-const WinIcon = ({ type }: { type: 'min' | 'max' | 'close' }) => {
+type WindowControlType = 'min' | 'max' | 'close';
+
+const WinIcon = ({ type }: { type: WindowControlType }) => {
   switch (type) {
     case 'min':
       return (
@@ -33,8 +35,10 @@ const WinIcon = ({ type }: { type: 'min' | 'max' | 'close' }) => {
 };
 
 const isElectron = typeof window !== 'undefined' && !!window.axchat;
+const BUTTON_CLASS =
+  'titlebar-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)]';
 
-const TitleBar: React.FC = () => {
+const TitleBar = () => {
   const [maximized, setMaximized] = useState(false);
   const maximizeLabel = useMemo(
     () => (maximized ? t('titlebar.restore') : t('titlebar.maximize')),
@@ -44,6 +48,29 @@ const TitleBar: React.FC = () => {
   const handleMinimize = useCallback(() => window.axchat?.minimize(), []);
   const handleToggleMaximize = useCallback(() => window.axchat?.toggleMaximize(), []);
   const handleClose = useCallback(() => window.axchat?.close(), []);
+  const controls = useMemo(
+    () => [
+      {
+        key: 'min',
+        label: t('titlebar.minimize'),
+        className: BUTTON_CLASS,
+        onClick: handleMinimize,
+      },
+      {
+        key: 'max',
+        label: maximizeLabel,
+        className: BUTTON_CLASS,
+        onClick: handleToggleMaximize,
+      },
+      {
+        key: 'close',
+        label: t('titlebar.close'),
+        className: `${BUTTON_CLASS} titlebar-btn-close`,
+        onClick: handleClose,
+      },
+    ] as const,
+    [handleClose, handleMinimize, handleToggleMaximize, maximizeLabel]
+  );
 
   useEffect(() => {
     if (!isElectron || !window.axchat) return;
@@ -59,31 +86,18 @@ const TitleBar: React.FC = () => {
     <div className="titlebar">
       <div className="titlebar-drag" />
       <div className="titlebar-controls">
-        <button
-          className="titlebar-btn"
-          onClick={handleMinimize}
-          aria-label={t('titlebar.minimize')}
-          title={t('titlebar.minimize')}
-        >
-          <WinIcon type="min" />
-        </button>
-        <button
-          className="titlebar-btn"
-          onClick={handleToggleMaximize}
-          aria-label={maximizeLabel}
-          title={maximizeLabel}
-        >
-          <WinIcon type="max" />
-          <span className="sr-only">{maximizeLabel}</span>
-        </button>
-        <button
-          className="titlebar-btn titlebar-btn-close"
-          onClick={handleClose}
-          aria-label={t('titlebar.close')}
-          title={t('titlebar.close')}
-        >
-          <WinIcon type="close" />
-        </button>
+        {controls.map((control) => (
+          <button
+            key={control.key}
+            className={control.className}
+            onClick={control.onClick}
+            aria-label={control.label}
+            title={control.label}
+          >
+            <WinIcon type={control.key} />
+            {control.key === 'max' && <span className="sr-only">{control.label}</span>}
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 /* global Buffer, fetch */
 import { Readable } from 'node:stream';
+import proxyConfig from '../../shared/proxy-config.cjs';
 
 const OPENAI_COMPATIBLE_PATH_HEADER = 'x-axchat-openai-compatible-path-mode';
 
@@ -110,7 +111,7 @@ export const registerOpenAICompatibleRoute = async (
     return reply.send(Readable.fromWeb(upstreamResponse.body));
   };
 
-  for (const url of ['/proxy/openai-compatible/v1/*', '/proxy/openai-compatible/*']) {
+  for (const url of proxyConfig.OPENAI_COMPATIBLE_ROUTE_PATTERNS) {
     app.route({
       method: ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
       url,

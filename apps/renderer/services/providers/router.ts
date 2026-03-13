@@ -1,4 +1,5 @@
 import { ProviderId } from '../../types';
+import { PROVIDER_IDS as RAW_PROVIDER_IDS } from '../../../shared/provider-ids';
 import { createProvider } from './registry';
 import { ProviderChat } from './types';
 
@@ -18,7 +19,10 @@ export class ProviderRouter {
     return provider;
   }
 
-  constructor(initialProvider: ProviderId = 'gemini') {
+  constructor(
+    initialProvider: ProviderId = (RAW_PROVIDER_IDS[0] ??
+      'gemini') as (typeof RAW_PROVIDER_IDS)[number]
+  ) {
     this.activeProviderId = initialProvider;
     this.activeProvider = this.getOrCreateProvider(initialProvider);
   }

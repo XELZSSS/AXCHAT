@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import { memo, useMemo } from 'react';
+import type { RefObject } from 'react';
 import ChatBubble from './ChatBubble';
 import ChatInput from './ChatInput';
 import WelcomeScreen from './WelcomeScreen';
@@ -10,9 +11,9 @@ type ChatMainProps = {
   messages: ChatMessage[];
   isStreaming: boolean;
   isLoading: boolean;
-  messagesContentRef: React.RefObject<HTMLDivElement>;
-  messagesContainerRef: React.RefObject<HTMLDivElement>;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
+  messagesContentRef: RefObject<HTMLDivElement>;
+  messagesContainerRef: RefObject<HTMLDivElement>;
+  messagesEndRef: RefObject<HTMLDivElement>;
   showScrollToBottom: boolean;
   onJumpToBottom: () => void;
   onSendMessage: (text: string) => void;
@@ -22,7 +23,7 @@ type ChatMainProps = {
   onToggleSearch: () => void;
 };
 
-const ChatMainComponent: React.FC<ChatMainProps> = ({
+const ChatMainComponent = ({
   messages,
   isStreaming,
   isLoading,
@@ -36,7 +37,7 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
   searchEnabled,
   searchAvailable,
   onToggleSearch,
-}) => {
+}: ChatMainProps) => {
   const chatInputProps = useMemo(
     () => ({
       onSend: onSendMessage,
@@ -59,6 +60,9 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
   );
 
   const hasMessages = messages.length > 0;
+  const welcomeInput = (
+    <ChatInput {...chatInputProps} containerClassName="px-0 pb-0 max-w-[min(80rem,100%)]" />
+  );
 
   return (
     <main className="chat-main flex-1 flex flex-col h-full relative bg-transparent pt-0">
@@ -73,28 +77,17 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
           style={{ paddingBottom: 'calc(var(--chat-input-height, 120px) + 8px)' }}
         >
           {!hasMessages ? (
-            <WelcomeScreen
-              input={
-                <ChatInput
-                  {...chatInputProps}
-                  containerClassName="px-0 pb-0 max-w-[min(80rem,100%)]"
-                />
-              }
-            />
+            <WelcomeScreen input={welcomeInput} />
           ) : (
             <>
-              {messages.map((msg, index) => {
-                return (
-                  <div key={msg.id}>
-                    <ChatBubble
-                      message={msg}
-                      isStreaming={
-                        isStreaming && index === messages.length - 1 && msg.role === Role.Model
-                      }
-                    />
-                  </div>
-                );
-              })}
+              {messages.map((msg, index) => (
+                <div key={msg.id}>
+                  <ChatBubble
+                    message={msg}
+                    isStreaming={isStreaming && index === messages.length - 1 && msg.role === Role.Model}
+                  />
+                </div>
+              ))}
               {isStreaming && <div className="flex justify-start mb-6"></div>}
               <div ref={messagesEndRef} className="h-4" />
             </>
@@ -111,7 +104,7 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
             <button
               type="button"
               onClick={onJumpToBottom}
-              className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--line-1)] bg-[var(--bg-2)] text-[var(--ink-2)] transition-colors duration-160 ease-out hover:text-[var(--ink-1)]"
+              className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--line-1)] bg-[var(--bg-2)] text-[var(--ink-2)] transition-colors duration-160 ease-out hover:text-[var(--action-interactive)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)]"
               aria-label={t('chat.scrollToBottom')}
               title={t('chat.scrollToBottom')}
             >
@@ -129,5 +122,5 @@ const ChatMainComponent: React.FC<ChatMainProps> = ({
   );
 };
 
-const ChatMain = React.memo(ChatMainComponent);
+const ChatMain = memo(ChatMainComponent);
 export default ChatMain;

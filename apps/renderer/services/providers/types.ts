@@ -1,5 +1,9 @@
-import { ChatMessage, ProviderId } from '../../types';
+import { ChatMessage, Citation, GeminiEmbeddingConfig, ProviderId } from '../../types';
 import type { RequestPolicy } from './requestPolicy';
+
+export type ProviderResponseMetadata = {
+  citations?: Citation[];
+};
 
 export interface ProviderChat {
   getId(): ProviderId;
@@ -13,6 +17,9 @@ export interface ProviderChat {
   setCustomHeaders?(headers: Array<{ key: string; value: string }>): void;
   getTavilyConfig?(): import('../../types').TavilyConfig | undefined;
   setTavilyConfig?(config: import('../../types').TavilyConfig | undefined): void;
+  getEmbeddingConfig?(): GeminiEmbeddingConfig | undefined;
+  setEmbeddingConfig?(config: GeminiEmbeddingConfig | undefined): void;
+  consumePendingResponseMetadata?(): ProviderResponseMetadata | undefined;
   resetChat(): void;
   startChatWithHistory(messages: ChatMessage[]): Promise<void>;
   sendMessageStream(

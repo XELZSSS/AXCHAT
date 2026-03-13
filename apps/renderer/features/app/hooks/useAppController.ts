@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { UpdaterStatus } from '../../../services/updaterClient';
 import { ChatMessage } from '../../../types';
 import { chatService } from '../../../services/chatService';
@@ -51,19 +51,6 @@ export const useAppController = () => {
       return DEFAULT_UPDATER_STATUS;
     }
   });
-  const [secretStorageInfo, setSecretStorageInfo] = useState<{
-    mode: 'secure' | 'plain';
-    backend: string;
-  }>(() => {
-    const cached = readAppStorage('secretStorageInfo');
-    if (!cached) return { mode: 'plain', backend: 'unknown' };
-    try {
-      const parsed = JSON.parse(cached) as { mode: 'secure' | 'plain'; backend: string };
-      return parsed?.backend ? parsed : { mode: 'plain', backend: 'unknown' };
-    } catch {
-      return { mode: 'plain', backend: 'unknown' };
-    }
-  });
 
   const syncProviderState = useCallback(() => {
     setProviderState({
@@ -91,12 +78,6 @@ export const useAppController = () => {
       setUpdaterStatus(status);
       writeAppStorage('updaterStatus', JSON.stringify(status));
     };
-    const loadSecretStorageInfo = async () => {
-      const info = await window.axchat?.getSecretStorageInfo?.();
-      if (!active || !info) return;
-      setSecretStorageInfo(info);
-      writeAppStorage('secretStorageInfo', JSON.stringify(info));
-    };
     const loadAppVersion = async () => {
       const version = await window.axchat?.getAppVersion?.();
       if (!active || !version) return;
@@ -105,7 +86,6 @@ export const useAppController = () => {
     };
 
     void loadUpdaterStatus();
-    void loadSecretStorageInfo();
     void loadAppVersion();
     const unsubscribe = subscribeUpdaterStatus((status) => {
       if (!active) return;
@@ -122,13 +102,16 @@ export const useAppController = () => {
   useUpdaterDownloadPrompt();
   useDocumentAppearance(language, theme);
 
-  const [commitCurrentSessionNow, setCommitCurrentSessionNow] = useState<(() => void) | null>(null);
+  const commitCurrentSessionNowRef = useRef<(() => void) | null>(null);
+  const commitCurrentSessionNow = useCallback(() => {
+    commitCurrentSessionNowRef.current?.();
+  }, []);
 
   const streaming = useStreamingMessages({
     chatService,
     messages,
     setMessages,
-    commitCurrentSessionNow: () => commitCurrentSessionNow?.(),
+    commitCurrentSessionNow,
   });
 
   const chatSessions = useChatSessions({
@@ -146,7 +129,7 @@ export const useAppController = () => {
   useBootstrapReadyNotification(isSessionStateReady);
 
   useEffect(() => {
-    setCommitCurrentSessionNow(() => () => commitCurrentSession({ force: true }));
+    commitCurrentSessionNowRef.current = () => commitCurrentSession({ force: true });
   }, [commitCurrentSession]);
 
   const { searchEnabled, setSearchEnabled } = useSearchToggle({
@@ -208,7 +191,6 @@ export const useAppController = () => {
     handleSaveSettings,
     appVersion,
     updaterStatus,
-    secretStorageInfo,
   });
 
   const sidebarProps = useSidebarProps({

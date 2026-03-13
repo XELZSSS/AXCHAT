@@ -3,18 +3,12 @@ import type { ChatSession } from '../types';
 
 export {};
 
-type ElectronSecretStorageInfo = {
-  mode: 'secure' | 'plain';
-  backend: string;
-};
-
 declare global {
   interface Window {
     axchat?: {
       readStoredAppValue: (key: string) => string | null;
       writeStoredAppValue: (key: string, value: string) => void;
       removeStoredAppValue: (key: string) => void;
-      getSecretStorageInfo: () => Promise<ElectronSecretStorageInfo>;
       minimize: () => Promise<void>;
       toggleMaximize: () => Promise<void>;
       close: () => Promise<void>;
@@ -30,6 +24,10 @@ declare global {
         changed: boolean;
         enabled: boolean;
       }>;
+      setProxyAllowHttpTargets: (enabled: boolean) => Promise<{
+        changed: boolean;
+        enabled: boolean;
+      }>;
       listStoredSessions: () => Promise<ChatSession[]>;
       getStoredSession: (sessionId: string) => Promise<ChatSession | null>;
       getStoredActiveSessionId: () => Promise<string | null>;
@@ -39,7 +37,6 @@ declare global {
       renameStoredSession: (payload: { sessionId: string; title: string }) => Promise<void>;
       deleteStoredSession: (sessionId: string) => Promise<void>;
       searchStoredSessions: (payload: { query: string; limit?: number }) => Promise<ChatSession[]>;
-      getProxyToken: () => string | undefined;
       getProxyPort: () => string;
       getProxyHost: () => string;
       onMaximizeChanged: (callback: (isMaximized: boolean) => void) => () => void;
@@ -50,6 +47,7 @@ declare global {
         toggleDevTools: string;
         quit: string;
       }) => Promise<void>;
+      clearCache: () => Promise<{ ok: boolean }>;
       notifyBootstrapReady: () => void;
     };
   }

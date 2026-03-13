@@ -16,7 +16,13 @@ const { createMainWindow, getMainWindow, registerWindowIpcHandlers, showWindow }
   resolveMainModule('window')
 );
 const { createTray, setTrayLanguage, setTrayLabels } = require(resolveMainModule('tray'));
-const { startProxy, stopProxy, setStaticProxyHttp2Enabled } = require(resolveMainModule('proxy'));
+const {
+  startProxy,
+  stopProxy,
+  setStaticProxyHttp2Enabled,
+  setAllowHttpTargets,
+  installProxyAuthHeaderInjection,
+} = require(resolveMainModule('proxy'));
 const { registerAppIpcHandlers } = require(resolveMainModule('ipc'));
 const { ensureDatabase, closeDatabase } = require(resolveMainModule('storage/db'));
 const { initUpdater, checkForUpdates, openUpdateDownload, getUpdaterState } = require(
@@ -24,15 +30,19 @@ const { initUpdater, checkForUpdates, openUpdateDownload, getUpdaterState } = re
 );
 
 const isDev = !app.isPackaged;
+
 let isQuitting = false;
 
-const gotLock = app.requestSingleInstanceLock();
-if (!gotLock) {
-  app.quit();
-} else {
-  app.on('second-instance', () => {
-    showWindow();
-  });
+const allowSecondInstance = isDev && process.env.AXCHAT_ALLOW_SECOND_INSTANCE === '1';
+if (!allowSecondInstance) {
+  const gotLock = app.requestSingleInstanceLock();
+  if (!gotLock) {
+    app.quit();
+  } else {
+    app.on('second-instance', () => {
+      showWindow();
+    });
+  }
 }
 
 app.on('before-quit', () => {
@@ -61,7 +71,7 @@ app.on('activate', () => {
   }
 });
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   ensureDatabase();
   Menu.setApplicationMenu(null);
   registerAppIpcHandlers({
@@ -72,6 +82,12 @@ app.whenReady().then(() => {
     openUpdateDownload,
     getUpdaterState,
     setStaticProxyHttp2Enabled,
+    setAllowHttpTargets,
+    prepareForClearUserData: async () => {
+      stopProxy();
+      closeDatabase();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    },
   });
   void (async () => {
     try {
@@ -88,6 +104,8 @@ app.whenReady().then(() => {
     } catch (error) {
       console.error('Failed to create main window:', error);
     }
+
+    installProxyAuthHeaderInjection();
 
     createTray({
       isDev,

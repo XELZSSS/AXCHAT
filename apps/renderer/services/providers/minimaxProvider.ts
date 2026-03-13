@@ -3,25 +3,20 @@ import { ChatMessage, ProviderId, Role } from '../../types';
 import type { RequestPolicy } from './requestPolicy';
 import { streamWithToolCallLoop } from './openaiChatHelpers';
 import { getDefaultMinimaxBaseUrl, resolveBaseUrl } from './baseUrl';
-import { MINIMAX_MODEL_CATALOG } from './models';
+import { PROVIDER_CONFIGS } from './providerConfig';
 import { OpenAIStandardProviderBase } from './openaiStandardProviderBase';
 import { getProxyAuthHeadersForTarget } from './proxy';
 import { buildOpenAITavilyTools } from './tavily';
 import { buildProviderModelConfig } from './modelConfig';
 import { ProviderChat, ProviderDefinition } from './types';
-import { sanitizeApiKey } from './utils';
 
 export const MINIMAX_PROVIDER_ID: ProviderId = 'minimax';
 
-const FALLBACK_MINIMAX_MODEL = 'MiniMax-M2.5';
-const { defaultModel: DEFAULT_MINIMAX_MODEL, models: MINIMAX_MODELS } = buildProviderModelConfig({
-  envModel: process.env.MINIMAX_MODEL,
-  fallbackModel: FALLBACK_MINIMAX_MODEL,
-  catalog: MINIMAX_MODEL_CATALOG,
-  includeFallbackModel: false,
-});
+const { defaultModel: DEFAULT_MINIMAX_MODEL, models: MINIMAX_MODELS } = buildProviderModelConfig(
+  PROVIDER_CONFIGS[MINIMAX_PROVIDER_ID].modelSpec
+);
 
-const DEFAULT_MINIMAX_API_KEY = sanitizeApiKey(process.env.MINIMAX_API_KEY);
+const DEFAULT_MINIMAX_API_KEY = PROVIDER_CONFIGS[MINIMAX_PROVIDER_ID].envApiKeyResolver();
 
 class MiniMaxProvider extends OpenAIStandardProviderBase implements ProviderChat {
   private baseUrl: string;

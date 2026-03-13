@@ -17,6 +17,26 @@ type ToolMessage = {
   content: string;
 };
 
+const createToolMessage = (toolCallId: string, content: string): ToolMessage => ({
+  role: 'tool',
+  tool_call_id: toolCallId,
+  content,
+});
+
+const createToolErrorContent = (message: string): string => JSON.stringify({ error: message });
+
+const resolveToolConcurrency = (
+  parsedCalls: Array<{ args: TavilyToolArgs }>,
+  requestPolicy?: RequestPolicy
+): number =>
+  Math.max(
+    1,
+    Math.min(
+      requestPolicy?.toolParallelism ?? Number.MAX_SAFE_INTEGER,
+      decideAdaptiveToolParallelism(parsedCalls.map(({ args }) => args))
+    )
+  );
+
 export abstract class OpenAIStyleProviderBase {
   protected history: ChatMessage[] = [];
 
@@ -63,27 +83,21 @@ export abstract class OpenAIStyleProviderBase {
 
     const toolResults = await runWithConcurrency(
       parsedCalls,
-      Math.max(
-        1,
-        Math.min(
-          requestPolicy?.toolParallelism ?? Number.MAX_SAFE_INTEGER,
-          decideAdaptiveToolParallelism(parsedCalls.map(({ args }) => args))
-        )
-      ),
+      resolveToolConcurrency(parsedCalls, requestPolicy),
       async ({ call, args }) => {
         if (call.function?.name !== 'tavily_search') {
-          return {
-            tool_call_id: call.id,
-            content: JSON.stringify({
-              error: `${t('settings.provider.error.tool.unsupported')}: ${call.function?.name ?? 'unknown'}`,
-            }),
-          };
+          return createToolMessage(
+            call.id,
+            createToolErrorContent(
+              `${t('settings.provider.error.tool.unsupported')}: ${call.function?.name ?? 'unknown'}`
+            )
+          );
         }
         if (!args.query) {
-          return {
-            tool_call_id: call.id,
-            content: JSON.stringify({ error: t('settings.provider.error.tool.missingQuery') }),
-          };
+          return createToolMessage(
+            call.id,
+            createToolErrorContent(t('settings.provider.error.tool.missingQuery'))
+          );
         }
         try {
           const result = await callTavilySearch(tavilyConfig, {
@@ -93,25 +107,18 @@ export abstract class OpenAIStyleProviderBase {
             topic: args.topic,
             include_answer: args.include_answer,
           });
-          return {
-            tool_call_id: call.id,
-            content: JSON.stringify(result),
-          };
+          return createToolMessage(call.id, JSON.stringify(result));
         } catch (error) {
-          return {
-            tool_call_id: call.id,
-            content: JSON.stringify({
-              error: error instanceof Error ? error.message : 'Tavily search failed',
-            }),
-          };
+          return createToolMessage(
+            call.id,
+            createToolErrorContent(
+              error instanceof Error ? error.message : 'Tavily search failed'
+            )
+          );
         }
       }
     );
 
-    return toolResults.map((result) => ({
-      role: 'tool' as const,
-      tool_call_id: result.tool_call_id,
-      content: result.content,
-    }));
+    return toolResults;
   }
 }

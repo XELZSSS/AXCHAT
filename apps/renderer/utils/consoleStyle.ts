@@ -2,16 +2,16 @@ const INSTALL_MARK = '__axchat_console_style_installed__';
 const DEFAULT_SCOPE = 'renderer';
 
 const BADGE_STYLE =
-  'background:#1f2937;color:#f8fafc;padding:2px 8px;border-radius:999px;font-weight:700;';
-const SCOPE_STYLE = 'color:#94a3b8;font-weight:600;';
+  'background:#1e1e1e;color:#ededed;padding:2px 8px;border-radius:999px;font-weight:700;';
+const SCOPE_STYLE = 'color:#8f8f8f;font-weight:600;';
 const BODY_STYLE = 'color:inherit;';
 
 const LEVEL_THEME = {
-  log: { label: 'LOG', color: '#7dd3fc' },
-  info: { label: 'INFO', color: '#60a5fa' },
-  warn: { label: 'WARN', color: '#fbbf24' },
-  error: { label: 'ERROR', color: '#f87171' },
-  debug: { label: 'DEBUG', color: '#c084fc' },
+  log: { label: 'LOG', color: '#9dbefe' },
+  info: { label: 'INFO', color: '#edb2f1' },
+  warn: { label: 'WARN', color: '#fcd53a' },
+  error: { label: 'ERROR', color: '#fc533a' },
+  debug: { label: 'DEBUG', color: '#fab283' },
 } as const;
 
 type ConsoleMethod = keyof typeof LEVEL_THEME;

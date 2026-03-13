@@ -4,22 +4,18 @@ import { t } from '../../utils/i18n';
 import { ProviderChat, ProviderDefinition } from './types';
 import { getDefaultGlmBaseUrl, normalizeBaseUrlForProvider } from './baseUrl';
 import { PreflightMessage, ToolLoopOverrides } from './openaiChatHelpers';
-import { GLM_MODEL_CATALOG } from './models';
-import { sanitizeApiKey } from './utils';
+import { PROVIDER_CONFIGS } from './providerConfig';
 import { getProxyAuthHeadersForTarget } from './proxy';
 import { buildProviderModelConfig } from './modelConfig';
 import { OpenAIStandardProviderBase } from './openaiStandardProviderBase';
 
 export const GLM_PROVIDER_ID: ProviderId = 'glm';
 
-const FALLBACK_GLM_MODEL = 'glm-5';
-const { defaultModel: DEFAULT_GLM_MODEL, models: GLM_MODELS } = buildProviderModelConfig({
-  envModel: process.env.GLM_MODEL,
-  fallbackModel: FALLBACK_GLM_MODEL,
-  catalog: GLM_MODEL_CATALOG,
-});
+const { defaultModel: DEFAULT_GLM_MODEL, models: GLM_MODELS } = buildProviderModelConfig(
+  PROVIDER_CONFIGS[GLM_PROVIDER_ID].modelSpec
+);
 
-const DEFAULT_GLM_API_KEY = sanitizeApiKey(process.env.GLM_API_KEY);
+const DEFAULT_GLM_API_KEY = PROVIDER_CONFIGS[GLM_PROVIDER_ID].envApiKeyResolver();
 
 const shouldEnableGlmThinking = (modelName: string): boolean => {
   const model = modelName.trim().toLowerCase();

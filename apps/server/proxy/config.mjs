@@ -13,6 +13,11 @@ export const staticProxyHttp2Enabled = ['1', 'true', 'yes', 'on'].includes(
     .trim()
     .toLowerCase()
 );
+export const allowHttpTargets = ['1', 'true', 'yes', 'on'].includes(
+  String(process.env.AXCHAT_PROXY_ALLOW_HTTP_TARGETS ?? '')
+    .trim()
+    .toLowerCase()
+);
 
 const DEFAULT_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
@@ -67,6 +72,7 @@ export const normalizeTargetUrl = (value) => {
   try {
     const url = new URL(raw);
     if (!['http:', 'https:'].includes(url.protocol)) return null;
+    if (url.protocol === 'http:' && !allowHttpTargets) return null;
     if (url.username || url.password) return null;
     return url.toString();
   } catch {
@@ -119,14 +125,4 @@ export const buildForwardHeaders = (
   return next;
 };
 
-export const staticRoutes = [
-  { path: '/proxy/minimax-intl', target: 'https://api.minimax.io', rewrite: '/v1' },
-  { path: '/proxy/minimax-cn', target: 'https://api.minimaxi.com', rewrite: '/v1' },
-  { path: '/proxy/moonshot-intl', target: 'https://api.moonshot.ai', rewrite: '/v1' },
-  { path: '/proxy/moonshot-cn', target: 'https://api.moonshot.cn', rewrite: '/v1' },
-  { path: '/proxy/openai', target: 'https://api.openai.com', rewrite: '/v1' },
-  { path: '/proxy/deepseek', target: 'https://api.deepseek.com', rewrite: '' },
-  { path: '/proxy/glm-cn', target: 'https://open.bigmodel.cn', rewrite: '/api/paas/v4' },
-  { path: '/proxy/glm-intl', target: 'https://api.z.ai', rewrite: '/api/paas/v4' },
-  { path: '/proxy/tavily', target: 'https://api.tavily.com', rewrite: '' },
-];
+export const staticRoutes = proxyConfig.STATIC_PROXY_ROUTES;

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Role, ChatMessage } from '../types';
 import { t } from '../utils/i18n';
 import { formatMessageTime } from '../utils/time';
@@ -17,7 +17,7 @@ const TypingIndicator = () => (
   </div>
 );
 
-const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false }) => {
+const ChatBubble = ({ message, isStreaming = false }: ChatBubbleProps) => {
   const isUser = message.role === Role.User;
   const isError = message.isError;
   const hasText = message.text && message.text.length > 0;
@@ -43,67 +43,28 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false })
     }
   }, []);
 
-  const toolLabels = useMemo(
-    () => ({
-      custom: t('chat.tool.custom'),
-      nativeOpenAI: t('chat.tool.native.openai'),
-      nativeGemini: t('chat.tool.native.gemini'),
-      nativeGeneric: t('chat.tool.native.generic'),
-    }),
-    [t]
-  );
-  const citationLabels = useMemo(
-    () => ({
-      chunk: t('chat.citations.chunk'),
-      score: t('chat.citations.score'),
-      webSource: t('chat.citations.webSource'),
-    }),
-    [t]
-  );
-  const reasoningLabels = useMemo(
-    () => ({
-      streaming: t('reasoning.streaming'),
-      title: t('reasoning.title'),
-      collapse: t('reasoning.collapse'),
-      expand: t('reasoning.expand'),
-    }),
-    [t]
-  );
-
-  const getToolLabel = useCallback(
-    (source?: 'custom' | 'native', provider?: string) => {
-      if (source !== 'native') return toolLabels.custom;
-      if (provider === 'openai') return toolLabels.nativeOpenAI;
-      if (provider === 'gemini') return toolLabels.nativeGemini;
-      return toolLabels.nativeGeneric;
-    },
-    [toolLabels]
-  );
-  const formatCitationChunkLabel = useCallback(
-    (chunkIndex: number) => `${citationLabels.chunk} ${chunkIndex + 1}`,
-    [citationLabels]
-  );
-  const formatCitationScoreLabel = useCallback(
-    (score: number) => `${citationLabels.score} ${score.toFixed(3)}`,
-    [citationLabels]
-  );
-  const formatWebCitationLabel = useCallback(
-    (index: number, title?: string, url?: string) => {
-      if (typeof title === 'string' && title.trim().length > 0) {
-        return title;
-      }
-      if (typeof url === 'string' && url.trim().length > 0) {
-        return url;
-      }
-      return `${citationLabels.webSource} ${index + 1}`;
-    },
-    [citationLabels]
-  );
-  const reasoningToggleLabel = useMemo(
-    () =>
-      `${isStreaming ? reasoningLabels.streaming : reasoningLabels.title} ${isReasoningOpen ? reasoningLabels.collapse : reasoningLabels.expand}`,
-    [isReasoningOpen, isStreaming, reasoningLabels]
-  );
+  const getToolLabel = (source?: 'custom' | 'native', provider?: string) => {
+    if (source !== 'native') return t('chat.tool.custom');
+    if (provider === 'openai') return t('chat.tool.native.openai');
+    if (provider === 'gemini') return t('chat.tool.native.gemini');
+    return t('chat.tool.native.generic');
+  };
+  const formatCitationChunkLabel = (chunkIndex: number) =>
+    `${t('chat.citations.chunk')} ${chunkIndex + 1}`;
+  const formatCitationScoreLabel = (score: number) =>
+    `${t('chat.citations.score')} ${score.toFixed(3)}`;
+  const formatWebCitationLabel = (index: number, title?: string, url?: string) => {
+    if (typeof title === 'string' && title.trim().length > 0) {
+      return title;
+    }
+    if (typeof url === 'string' && url.trim().length > 0) {
+      return url;
+    }
+    return `${t('chat.citations.webSource')} ${index + 1}`;
+  };
+  const reasoningToggleLabel = `${isStreaming ? t('reasoning.streaming') : t('reasoning.title')} ${
+    isReasoningOpen ? t('reasoning.collapse') : t('reasoning.expand')
+  }`;
 
   useEffect(() => {
     return () => {
@@ -111,6 +72,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false })
     };
   }, [clearCollapseTimer]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (isStreaming && hasReasoning && !reasoningSeenRef.current) {
       clearCollapseTimer();
@@ -133,6 +95,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false })
 
     prevStreamingRef.current = isStreaming;
   }, [clearCollapseTimer, hasReasoning, isStreaming]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="flex w-full mb-6 justify-center">
@@ -151,7 +114,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false })
               isUser
                 ? 'text-[var(--ink-1)]'
                 : isError
-                  ? 'px-4 py-3 rounded-xl bg-red-900/10 border border-red-900/30 text-red-100 rounded-tl-sm'
+                  ? 'px-4 py-3 rounded-xl bg-[var(--status-error-bg)] border border-[var(--status-error-border)] text-[var(--text-on-brand)] rounded-tl-sm'
                   : 'text-[var(--ink-2)]'
             }`}
           >
@@ -201,7 +164,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false })
                         key={toolCall.id}
                         className={`w-fit max-w-[min(40rem,100%)] rounded-lg border px-3 py-2 text-xs ${
                           toolCall.source === 'native'
-                            ? 'border-amber-500/30 bg-amber-500/10 text-amber-100'
+                            ? 'border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-[var(--text-on-warning)]'
                             : 'border-[var(--line-1)] bg-[var(--bg-2)] text-[var(--ink-3)]'
                         }`}
                       >
@@ -223,9 +186,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false })
                         key={toolResult.id}
                         className={`w-fit max-w-[min(40rem,100%)] rounded-lg border px-3 py-2 text-xs ${
                           toolResult.isError
-                            ? 'border-red-900/30 bg-red-900/10 text-red-100'
+                            ? 'border-[var(--status-error-border)] bg-[var(--status-error-bg)] text-[var(--text-on-brand)]'
                             : toolResult.source === 'native'
-                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-100'
+                              ? 'border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-[var(--text-on-warning)]'
                               : 'border-[var(--line-1)] bg-[var(--bg-2)] text-[var(--ink-3)]'
                         }`}
                       >
@@ -280,7 +243,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, isStreaming = false })
                                   href={citation.url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="mt-1 block text-[11px] text-[#60a5fa] underline break-all"
+                                  className="mt-1 block text-[11px] text-[var(--action-interactive)] underline break-all"
                                 >
                                   {citation.url}
                                 </a>
@@ -359,4 +322,4 @@ const areChatBubbleEqual = (prev: ChatBubbleProps, next: ChatBubbleProps): boole
   );
 };
 
-export default React.memo(ChatBubble, areChatBubbleEqual);
+export default memo(ChatBubble, areChatBubbleEqual);

@@ -10,5 +10,7 @@ export type SaveSettingsPayload = {
   baseUrl?: string;
   customHeaders?: ProviderSettings['customHeaders'];
   tavily?: ProviderSettings['tavily'];
+  embedding?: ProviderSettings['embedding'];
   staticProxyHttp2Enabled: boolean;
+  allowHttpTargets: boolean;
 };

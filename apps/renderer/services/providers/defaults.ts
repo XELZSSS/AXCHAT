@@ -1,9 +1,10 @@
-import { ProviderId, TavilyConfig } from '../../types';
+import { GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '../../types';
+import { PROVIDER_IDS } from '../../../shared/provider-ids';
 import { resolveDefaultBaseUrlForProvider } from './baseUrl';
 import { supportsProviderTavily } from './capabilities';
 import { listProviderIds } from './registry';
 import { getDefaultTavilyConfig } from './tavily';
-import { sanitizeApiKey } from './utils';
+import { PROVIDER_CONFIGS } from './providerConfig';
 
 export interface ProviderSettings {
   apiKey?: string;
@@ -11,18 +12,16 @@ export interface ProviderSettings {
   baseUrl?: string;
   customHeaders?: Array<{ key: string; value: string }>;
   tavily?: TavilyConfig;
+  embedding?: GeminiEmbeddingConfig;
 }
 
-const envApiKeyResolvers: Record<ProviderId, () => string | undefined> = {
-  openai: () => sanitizeApiKey(process.env.OPENAI_API_KEY),
-  'openai-compatible': () => sanitizeApiKey(process.env.OPENAI_COMPATIBLE_API_KEY),
-  xai: () => sanitizeApiKey(process.env.XAI_API_KEY),
-  deepseek: () => sanitizeApiKey(process.env.DEEPSEEK_API_KEY),
-  glm: () => sanitizeApiKey(process.env.GLM_API_KEY),
-  minimax: () => sanitizeApiKey(process.env.MINIMAX_API_KEY),
-  moonshot: () => sanitizeApiKey(process.env.MOONSHOT_API_KEY),
-  gemini: () => sanitizeApiKey(process.env.GEMINI_API_KEY ?? process.env.API_KEY),
-};
+const envApiKeyResolvers = PROVIDER_IDS.reduce(
+  (acc, id) => {
+    acc[id] = PROVIDER_CONFIGS[id].envApiKeyResolver;
+    return acc;
+  },
+  {} as Record<ProviderId, () => string | undefined>
+);
 
 export const getEnvApiKey = (providerId: ProviderId): string | undefined => {
   return envApiKeyResolvers[providerId]();
@@ -35,6 +34,7 @@ export const getDefaultProviderSettings = (providerId: ProviderId): ProviderSett
     baseUrl: resolveDefaultBaseUrlForProvider(providerId),
     customHeaders: [],
     tavily: supportsProviderTavily(providerId) ? getDefaultTavilyConfig() : undefined,
+    embedding: providerId === 'gemini' ? {} : undefined,
   };
 };
 

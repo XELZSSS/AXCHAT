@@ -348,20 +348,15 @@ export const useStreamingMessages = ({
       friendlyError = t('error.overloaded');
     }
 
-    return `**${friendlyError}**
+    return `${friendlyError}
 
-**${t('error.troubleshooting')}**
+${t('error.troubleshooting')}
 1. ${t('error.step1')}
 2. ${t('error.step2')}
 3. ${t('error.step3')}
 
-<details>
-<summary>${t('error.technicalDetails')}</summary>
-
-\`\`\`
-${rawMessage}
-\`\`\`
-</details>`;
+${t('error.technicalDetails')}
+${rawMessage}`;
   }, []);
 
   const upsertModelErrorMessage = useCallback(
@@ -497,10 +492,11 @@ ${rawMessage}
         }
 
         flushBufferedStreamResponse(modelMessageId, accumulator);
+        const responseMetadata = chatService.consumePendingResponseMetadata();
         updateMessageById(modelMessageId, {
           text: accumulator.cleaned,
           reasoning: accumulator.reasoning || undefined,
-          citations: undefined,
+          citations: responseMetadata?.citations,
         });
       };
 

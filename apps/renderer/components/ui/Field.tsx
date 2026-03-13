@@ -1,16 +1,17 @@
-import React, { useMemo } from 'react';
+import { memo } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from './cn';
 
 type FieldProps = {
-  label: React.ReactNode;
-  actions?: React.ReactNode;
-  children: React.ReactNode;
+  label: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
   className?: string;
   id?: string;
 };
 
-const Field: React.FC<FieldProps> = ({ label, actions, children, className, id }) => {
-  const LabelTag = useMemo(() => (id ? 'label' : 'div'), [id]);
+const Field = ({ label, actions, children, className, id }: FieldProps) => {
+  const LabelTag = id ? 'label' : 'div';
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -28,5 +29,5 @@ const Field: React.FC<FieldProps> = ({ label, actions, children, className, id }
   );
 };
 
-const MemoizedField = React.memo(Field);
+const MemoizedField = memo(Field);
 export default MemoizedField;

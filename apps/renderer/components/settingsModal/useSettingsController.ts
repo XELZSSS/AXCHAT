@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TavilyConfig } from '../../types';
+import { GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '../../types';
 import { ActiveSettingsTab, SettingsModalState } from './reducer';
 import { resolveBaseUrlForRegion } from './constants';
 import { useSettingsForm } from './useSettingsForm';
@@ -7,6 +7,7 @@ import { ProviderSettingsMap, SaveSettingsPayload } from './types';
 import {
   buildSettingsSavePayload,
   normalizeToolCallRounds,
+  persistProxyAllowHttpTargets,
   persistProxyStaticHttp2Enabled,
   persistToolCallRounds,
 } from './controllerHelpers';
@@ -22,12 +23,14 @@ export const useSettingsController = ({
   isOpen,
   onClose,
   onSave,
+  providerId: currentProviderId,
   modelName: currentModelName,
   ...formOptions
 }: UseSettingsControllerOptions) => {
   const { state, dispatch, providerOptions, activeMeta, tabs, handleProviderChange } =
     useSettingsForm({
       isOpen,
+      providerId: currentProviderId,
       modelName: currentModelName,
       ...formOptions,
     });
@@ -44,29 +47,32 @@ export const useSettingsController = ({
     [patchState]
   );
 
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(null);
+  const overlayRef = useCallback((node: HTMLDivElement | null) => {
+    setPortalContainer(node);
+  }, []);
+
+  const lastSyncedProviderIdRef = useRef<ProviderId | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
-      setPortalContainer(null);
+      lastSyncedProviderIdRef.current = null;
       return;
     }
+    if (state.providerId !== currentProviderId) return;
+    if (lastSyncedProviderIdRef.current === currentProviderId) return;
 
-    setPortalContainer(overlayRef.current);
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (state.modelName.trim().length > 0) return;
     const nextModelName = currentModelName?.trim() ?? '';
-    if (!nextModelName) return;
-    setField('modelName', nextModelName);
-  }, [currentModelName, isOpen, setField, state.modelName]);
+    if (state.modelName.trim().length === 0 && nextModelName) {
+      setField('modelName', nextModelName);
+    }
+    lastSyncedProviderIdRef.current = currentProviderId;
+  }, [currentModelName, currentProviderId, isOpen, setField, state.modelName, state.providerId]);
 
   const handleSave = useCallback(() => {
     persistToolCallRounds(state.toolCallMaxRounds);
     persistProxyStaticHttp2Enabled(state.staticProxyHttp2Enabled);
+    persistProxyAllowHttpTargets(state.allowHttpTargets);
 
     onSave(buildSettingsSavePayload(state));
     onClose();
@@ -83,6 +89,14 @@ export const useSettingsController = ({
       onToolCallMaxRoundsBlur: () =>
         setField('toolCallMaxRounds', normalizeToolCallRounds(state.toolCallMaxRounds)),
       onBaseUrlChange: (value: string) => setField('baseUrl', value),
+      onSetEmbeddingField: (
+        key: keyof GeminiEmbeddingConfig,
+        value: GeminiEmbeddingConfig[keyof GeminiEmbeddingConfig]
+      ) =>
+        dispatch({
+          type: 'set_embedding',
+          payload: { key, value },
+        }),
       onAddCustomHeader: () => dispatch({ type: 'add_custom_header' }),
       onSetCustomHeaderKey: (index: number, value: string) =>
         dispatch({ type: 'set_custom_header_key', payload: { index, value } }),
@@ -124,6 +138,7 @@ export const useSettingsController = ({
     () => ({
       onSetStaticProxyHttp2Enabled: (enabled: boolean) =>
         setField('staticProxyHttp2Enabled', enabled),
+      onSetAllowHttpTargets: (enabled: boolean) => setField('allowHttpTargets', enabled),
     }),
     [setField]
   );

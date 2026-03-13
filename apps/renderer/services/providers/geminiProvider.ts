@@ -10,19 +10,22 @@ import {
   type ThinkingLevel,
   type ToolListUnion,
 } from '@google/genai';
-import { ChatMessage, ProviderId, Role, TavilyConfig } from '../../types';
+import { ChatMessage, GeminiEmbeddingConfig, ProviderId, Role, TavilyConfig } from '../../types';
 import type { RequestPolicy } from './requestPolicy';
 import { t } from '../../utils/i18n';
-import { ProviderChat, ProviderDefinition } from './types';
+import { ProviderChat, ProviderDefinition, ProviderResponseMetadata } from './types';
 import { buildSystemInstruction } from './prompts';
 import { decideAdaptiveToolParallelism, runWithConcurrency } from './requestPolicy';
-import { GEMINI_MODEL_CATALOG } from './models';
+import { buildProviderModelConfig } from './modelConfig';
+import { PROVIDER_CONFIGS } from './providerConfig';
 import { sanitizeApiKey } from './utils';
+import { GEMINI_MODEL_CATALOG } from './models';
+import { normalizeGeminiEmbeddingConfig } from './geminiEmbeddings';
+import { retrieveGeminiSemanticContext } from './geminiSemanticSearch';
 import { callTavilySearch, getDefaultTavilyConfig, normalizeTavilyConfig } from './tavily';
 import { TavilyToolArgs } from './openaiChatHelpers';
 
 export const GEMINI_PROVIDER_ID: ProviderId = 'gemini';
-export const GEMINI_MODEL_NAME = 'gemini-3.1-flash-lite-preview';
 const GEMINI_THINKING_CONFIG: ThinkingConfig = {
   includeThoughts: true,
   thinkingLevel: 'HIGH' as ThinkingLevel,
@@ -84,7 +87,10 @@ const extractGeminiChunkPayload = (response: GenerateContentResponse): GeminiChu
   return { content, reasoning };
 };
 
-const DEFAULT_GEMINI_API_KEY = sanitizeApiKey(process.env.GEMINI_API_KEY ?? process.env.API_KEY);
+const { defaultModel: DEFAULT_GEMINI_MODEL, models: GEMINI_MODELS } = buildProviderModelConfig(
+  PROVIDER_CONFIGS[GEMINI_PROVIDER_ID].modelSpec
+);
+const DEFAULT_GEMINI_API_KEY = PROVIDER_CONFIGS[GEMINI_PROVIDER_ID].envApiKeyResolver();
 
 const createGeminiModelMessage = (text: string, reasoning: string): ChatMessage => ({
   id: `gemini-model-${Date.now()}`,
@@ -100,12 +106,15 @@ class GeminiProvider implements ProviderChat {
   private apiKey?: string;
   private client: GoogleGenAI | null = null;
   private tavilyConfig?: TavilyConfig;
+  private embeddingConfig?: GeminiEmbeddingConfig;
   private history: ChatMessage[] = [];
+  private pendingResponseMetadata?: ProviderResponseMetadata;
 
   constructor() {
-    this.modelName = GEMINI_MODEL_NAME;
+    this.modelName = DEFAULT_GEMINI_MODEL;
     this.apiKey = DEFAULT_GEMINI_API_KEY;
     this.tavilyConfig = getDefaultTavilyConfig();
+    this.embeddingConfig = undefined;
   }
 
   private async getClient(): Promise<GoogleGenAI> {
@@ -278,12 +287,28 @@ class GeminiProvider implements ProviderChat {
     this.tavilyConfig = normalizeTavilyConfig(config);
   }
 
+  getEmbeddingConfig(): GeminiEmbeddingConfig | undefined {
+    return this.embeddingConfig;
+  }
+
+  setEmbeddingConfig(config?: GeminiEmbeddingConfig): void {
+    this.embeddingConfig = normalizeGeminiEmbeddingConfig(config);
+  }
+
+  consumePendingResponseMetadata(): ProviderResponseMetadata | undefined {
+    const metadata = this.pendingResponseMetadata;
+    this.pendingResponseMetadata = undefined;
+    return metadata;
+  }
+
   resetChat(): void {
     this.history = [];
+    this.pendingResponseMetadata = undefined;
   }
 
   async startChatWithHistory(messages: ChatMessage[]): Promise<void> {
     this.history = messages.filter((msg) => !msg.isError);
+    this.pendingResponseMetadata = undefined;
   }
 
   async *sendMessageStream(
@@ -295,6 +320,7 @@ class GeminiProvider implements ProviderChat {
       if (signal?.aborted) return;
 
       const client = await this.getClient();
+      this.pendingResponseMetadata = undefined;
       let fullResponse = '';
       let fullReasoning = '';
       const userMessage: ChatMessage = {
@@ -303,12 +329,25 @@ class GeminiProvider implements ProviderChat {
         text: message,
         timestamp: Date.now(),
       };
+      const semanticContext = await retrieveGeminiSemanticContext({
+        apiKey: this.apiKey ?? '',
+        query: message,
+        embeddingConfig: this.embeddingConfig,
+        signal,
+      }).catch((error) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          throw error;
+        }
+        console.warn('Gemini semantic retrieval skipped:', error);
+        return undefined;
+      });
+      const outboundMessage = semanticContext?.prompt ?? message;
 
       const tools = this.buildTools();
       const chat = this.createChatSession(client, tools, signal);
 
       if (!tools) {
-        const stream = await chat.sendMessageStream({ message });
+        const stream = await chat.sendMessageStream({ message: outboundMessage });
 
         for await (const chunk of stream) {
           if (signal?.aborted) return;
@@ -326,12 +365,15 @@ class GeminiProvider implements ProviderChat {
 
         if (fullResponse) {
           const modelMessage = createGeminiModelMessage(fullResponse, fullReasoning);
+          this.pendingResponseMetadata = semanticContext
+            ? { citations: semanticContext.citations }
+            : undefined;
           this.history = [...this.history, userMessage, modelMessage];
         }
         return;
       }
 
-      const response = await chat.sendMessage({ message });
+      const response = await chat.sendMessage({ message: outboundMessage });
 
       const functionCalls = response.functionCalls ?? [];
       if (!functionCalls.length) {
@@ -345,6 +387,9 @@ class GeminiProvider implements ProviderChat {
           fullResponse = payload.content;
           yield payload.content;
           const modelMessage = createGeminiModelMessage(payload.content, fullReasoning);
+          this.pendingResponseMetadata = semanticContext
+            ? { citations: semanticContext.citations }
+            : undefined;
           this.history = [...this.history, userMessage, modelMessage];
         }
         return;
@@ -369,6 +414,9 @@ class GeminiProvider implements ProviderChat {
 
       if (fullResponse) {
         const modelMessage = createGeminiModelMessage(fullResponse, fullReasoning);
+        this.pendingResponseMetadata = semanticContext
+          ? { citations: semanticContext.citations }
+          : undefined;
         this.history = [...this.history, userMessage, modelMessage];
       }
     } catch (error) {
@@ -380,7 +428,7 @@ class GeminiProvider implements ProviderChat {
 
 export const geminiProviderDefinition: ProviderDefinition = {
   id: GEMINI_PROVIDER_ID,
-  models: Array.from(new Set([GEMINI_MODEL_NAME, ...GEMINI_MODEL_CATALOG])),
-  defaultModel: GEMINI_MODEL_NAME,
+  models: GEMINI_MODELS,
+  defaultModel: DEFAULT_GEMINI_MODEL,
   create: () => new GeminiProvider(),
 };

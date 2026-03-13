@@ -1,13 +1,14 @@
-import React from 'react';
+import { forwardRef, memo } from 'react';
+import type { InputHTMLAttributes } from 'react';
 import { cn } from './cn';
 
-type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
+type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   compact?: boolean;
 };
 
 const BASE = [
   'rounded-lg bg-[var(--bg-2)] text-[var(--ink-1)] outline-none',
-  'ring-1 ring-[var(--line-1)] focus:ring-[var(--line-1)]',
+  'ring-1 ring-[var(--line-1)] focus:ring-[var(--action-interactive)]',
   'placeholder:text-[var(--ink-3)]',
 ].join(' ');
 
@@ -16,8 +17,8 @@ const SIZES = {
   default: 'px-3 py-2 text-sm',
 } as const;
 
-const Input = React.memo(
-  React.forwardRef<HTMLInputElement, InputProps>(
+const Input = memo(
+  forwardRef<HTMLInputElement, InputProps>(
     ({ className, compact = false, ...props }, ref) => (
       <input
         ref={ref}

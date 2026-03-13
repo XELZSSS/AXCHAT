@@ -28,6 +28,18 @@ const clampParallelism = (value: number, requestCount: number): number => {
   return Math.max(1, Math.min(value, requestCount, MAX_ADAPTIVE_TOOL_PARALLELISM));
 };
 
+const buildRequestPolicy = (
+  mode: RequestPolicyMode,
+  toolParallelism: number,
+  reason: string
+): RequestPolicy => ({
+  mode,
+  toolParallelism,
+  retryBudget: 1,
+  downgradeOnFailure: true,
+  reason,
+});
+
 export const decideAdaptiveToolParallelism = (requests: AdaptiveToolRequest[]): number => {
   if (requests.length <= 1) return 1;
 
@@ -55,32 +67,14 @@ export const decideRequestPolicyFromPrompt = (message: string): RequestPolicy =>
   const isComplexTask = length >= 120 || /\n|-\s|\d+\.|；|;/.test(normalized);
 
   if (hasSearchIntent && isComplexTask) {
-    return {
-      mode: 'aggressive',
-      toolParallelism: 3,
-      retryBudget: 1,
-      downgradeOnFailure: true,
-      reason: 'search-intent-and-complex-task',
-    };
+    return buildRequestPolicy('aggressive', 3, 'search-intent-and-complex-task');
   }
 
   if (hasSearchIntent || length >= LONG_QUERY_THRESHOLD) {
-    return {
-      mode: 'balanced',
-      toolParallelism: 2,
-      retryBudget: 1,
-      downgradeOnFailure: true,
-      reason: hasSearchIntent ? 'search-intent' : 'long-query',
-    };
+    return buildRequestPolicy('balanced', 2, hasSearchIntent ? 'search-intent' : 'long-query');
   }
 
-  return {
-    mode: 'serial',
-    toolParallelism: 1,
-    retryBudget: 1,
-    downgradeOnFailure: true,
-    reason: 'default',
-  };
+  return buildRequestPolicy('serial', 1, 'default');
 };
 
 export const downgradeRequestPolicy = (policy: RequestPolicy): RequestPolicy => {

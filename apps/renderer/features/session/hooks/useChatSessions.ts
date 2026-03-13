@@ -1,5 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Dispatch, FormEvent, KeyboardEvent, MouseEvent, SetStateAction } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import type {
+  Dispatch,
+  FormEvent,
+  KeyboardEvent,
+  MouseEvent,
+  MutableRefObject,
+  SetStateAction,
+} from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatService } from '../../../services/chatService';
 import { ChatMessage, ChatSession, Role } from '../../../types';
@@ -123,7 +130,7 @@ const applySessionContext = async (
   session: ChatSession,
   actions: SessionContextActions,
   activationToken: number,
-  latestActivationTokenRef: React.MutableRefObject<number>
+  latestActivationTokenRef: MutableRefObject<number>
 ): Promise<void> => {
   const { setCurrentSessionId, setMessages, syncProviderState } = actions;
 
@@ -145,7 +152,7 @@ const activateSession = (
   chatService: ChatService,
   session: ChatSession,
   actions: SessionContextActions,
-  latestActivationTokenRef: React.MutableRefObject<number>
+  latestActivationTokenRef: MutableRefObject<number>
 ): void => {
   const activationToken = latestActivationTokenRef.current + 1;
   latestActivationTokenRef.current = activationToken;
@@ -165,8 +172,8 @@ const activateSession = (
 };
 
 const consumePendingSessionSave = (
-  saveSessionTimerRef: React.MutableRefObject<number | null>,
-  pendingSessionSaveRef: React.MutableRefObject<ChatSession | null>
+  saveSessionTimerRef: MutableRefObject<number | null>,
+  pendingSessionSaveRef: MutableRefObject<ChatSession | null>
 ): ChatSession | null => {
   if (saveSessionTimerRef.current !== null) {
     window.clearTimeout(saveSessionTimerRef.current);
@@ -179,8 +186,8 @@ const consumePendingSessionSave = (
 };
 
 const discardPendingSessionSave = (
-  saveSessionTimerRef: React.MutableRefObject<number | null>,
-  pendingSessionSaveRef: React.MutableRefObject<ChatSession | null>,
+  saveSessionTimerRef: MutableRefObject<number | null>,
+  pendingSessionSaveRef: MutableRefObject<ChatSession | null>,
   sessionId?: string
 ): void => {
   if (sessionId && pendingSessionSaveRef.current?.id !== sessionId) {
@@ -276,14 +283,18 @@ export const useChatSessions = ({
     }
   }, []);
 
+  const flushSessionSaveOnPageExit = useEffectEvent(() => {
+    void flushSessionSave();
+  });
+
   useEffect(() => {
     const handlePageHide = () => {
-      void flushSessionSave();
+      flushSessionSaveOnPageExit();
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        void flushSessionSave();
+        flushSessionSaveOnPageExit();
       }
     };
 
@@ -293,9 +304,9 @@ export const useChatSessions = ({
     return () => {
       window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      void flushSessionSave();
+      flushSessionSaveOnPageExit();
     };
-  }, [flushSessionSave]);
+  }, []);
 
   const scheduleSessionSave = useCallback((session: ChatSession) => {
     pendingSessionSaveRef.current = session;
@@ -434,6 +445,16 @@ export const useChatSessions = ({
     messages,
   ]);
 
+  const sessionSummaries = useMemo(() => {
+    if (!activeSessionDraft) {
+      return sessions;
+    }
+
+    return hasSessionSummaryChanged(currentSession, activeSessionDraft)
+      ? upsertSessionList(sessions, activeSessionDraft)
+      : sessions;
+  }, [activeSessionDraft, currentSession, sessions]);
+
   useEffect(() => {
     if (!activeSessionDraft) {
       return;
@@ -444,10 +465,6 @@ export const useChatSessions = ({
     }
 
     pendingSessionSaveRef.current = activeSessionDraft;
-
-    if (hasSessionSummaryChanged(currentSession, activeSessionDraft)) {
-      setSessions((prev) => upsertSessionList(prev, activeSessionDraft));
-    }
 
     if (isStreaming || isLoading) {
       return;
@@ -657,32 +674,34 @@ export const useChatSessions = ({
   );
 
   const normalizedSearchQuery = searchQuery.toLowerCase();
-  const [searchedSessions, setSearchedSessions] = useState<ChatSession[] | null>(null);
+  const [searchResult, setSearchResult] = useState<{
+    query: string;
+    sessions: ChatSession[];
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const query = searchQuery.trim();
 
     if (!query) {
-      setSearchedSessions(null);
       return () => {
         cancelled = true;
       };
     }
 
     const fallbackByTitle = () =>
-      sessions.filter((session) => session.title.toLowerCase().includes(query.toLowerCase()));
+      sessionSummaries.filter((session) => session.title.toLowerCase().includes(query.toLowerCase()));
 
     void (async () => {
       try {
         const results = await searchSessionSummaries(query, 200);
         if (!cancelled) {
-          setSearchedSessions(results);
+          setSearchResult({ query, sessions: results });
         }
       } catch (error) {
         console.error('Failed to search sessions:', error);
         if (!cancelled) {
-          setSearchedSessions(fallbackByTitle());
+          setSearchResult({ query, sessions: fallbackByTitle() });
         }
       }
     })();
@@ -690,25 +709,30 @@ export const useChatSessions = ({
     return () => {
       cancelled = true;
     };
-  }, [searchQuery, sessions]);
+  }, [searchQuery, sessionSummaries]);
 
   const filteredSessions = useMemo(() => {
     if (!normalizedSearchQuery) {
-      return sessions;
+      return sessionSummaries;
     }
 
-    if (!searchedSessions) {
-      return sessions.filter((session) =>
+    const matchingSearchResult =
+      searchResult && searchResult.query.toLowerCase() === normalizedSearchQuery
+        ? searchResult.sessions
+        : null;
+
+    if (!matchingSearchResult) {
+      return sessionSummaries.filter((session) =>
         session.title.toLowerCase().includes(normalizedSearchQuery)
       );
     }
 
-    const sessionsById = new Map(sessions.map((session) => [session.id, session] as const));
-    return searchedSessions.map((session) => sessionsById.get(session.id) ?? session);
-  }, [normalizedSearchQuery, searchedSessions, sessions]);
+    const sessionsById = new Map(sessionSummaries.map((session) => [session.id, session] as const));
+    return matchingSearchResult.map((session) => sessionsById.get(session.id) ?? session);
+  }, [normalizedSearchQuery, searchResult, sessionSummaries]);
 
   return {
-    sessions,
+    sessions: sessionSummaries,
     filteredSessions,
     currentSessionId,
     searchQuery,

@@ -1,14 +1,5 @@
-import { ChatMessage, ProviderId, TavilyConfig } from '../../types';
-import {
-  DEEPSEEK_MODEL_CATALOG,
-  GEMINI_MODEL_CATALOG,
-  GLM_MODEL_CATALOG,
-  MINIMAX_MODEL_CATALOG,
-  MOONSHOT_MODEL_CATALOG,
-  OPENAI_COMPATIBLE_MODEL_CATALOG,
-  OPENAI_MODEL_CATALOG,
-  XAI_MODEL_CATALOG,
-} from './models';
+import { ChatMessage, GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '../../types';
+import { PROVIDER_CONFIGS } from './providerConfig';
 import { ProviderChat, ProviderDefinition } from './types';
 import { buildProviderModelConfig } from './modelConfig';
 import { PROVIDER_IDS as RAW_PROVIDER_IDS } from '../../../shared/provider-ids';
@@ -19,12 +10,7 @@ type ProviderMeta = {
   models: string[];
 };
 
-type ProviderModelSpec = {
-  envModel?: string;
-  fallbackModel: string;
-  catalog: string[];
-  includeFallbackModel?: boolean;
-};
+type ProviderModelSpec = (typeof PROVIDER_CONFIGS)[ProviderId]['modelSpec'];
 
 type ProviderDefinitionLoader = () => Promise<ProviderDefinition>;
 
@@ -32,49 +18,22 @@ type ProviderCustomHeader = { key: string; value: string };
 
 const PROVIDER_IDS = RAW_PROVIDER_IDS as unknown as ProviderId[];
 
-const providerModelSpecs: Record<ProviderId, ProviderModelSpec> = {
-  gemini: {
-    fallbackModel: 'gemini-3.1-flash-lite-preview',
-    catalog: GEMINI_MODEL_CATALOG,
+const providerModelSpecs: Record<ProviderId, ProviderModelSpec> = PROVIDER_IDS.reduce(
+  (acc, id) => {
+    acc[id] = PROVIDER_CONFIGS[id].modelSpec;
+    return acc;
   },
-  openai: {
-    envModel: process.env.OPENAI_MODEL,
-    fallbackModel: 'gpt-5.4',
-    catalog: OPENAI_MODEL_CATALOG,
-  },
-  'openai-compatible': {
-    envModel: process.env.OPENAI_COMPATIBLE_MODEL,
-    fallbackModel: 'gpt-4.1-mini',
-    catalog: OPENAI_COMPATIBLE_MODEL_CATALOG,
-  },
-  xai: {
-    envModel: process.env.XAI_MODEL,
-    fallbackModel: 'grok-4-1-fast-reasoning',
-    catalog: XAI_MODEL_CATALOG,
-  },
-  deepseek: {
-    envModel: process.env.DEEPSEEK_MODEL,
-    fallbackModel: 'deepseek-reasoner',
-    catalog: DEEPSEEK_MODEL_CATALOG,
-  },
-  glm: {
-    envModel: process.env.GLM_MODEL,
-    fallbackModel: 'glm-5',
-    catalog: GLM_MODEL_CATALOG,
-  },
-  minimax: {
-    envModel: process.env.MINIMAX_MODEL,
-    fallbackModel: 'MiniMax-M2.5',
-    catalog: MINIMAX_MODEL_CATALOG,
-    includeFallbackModel: false,
-  },
-  moonshot: {
-    envModel: process.env.MOONSHOT_MODEL,
-    fallbackModel: 'kimi-k2.5',
-    catalog: MOONSHOT_MODEL_CATALOG,
-    includeFallbackModel: false,
-  },
+  {} as Record<ProviderId, ProviderModelSpec>
+);
+
+const assertProviderMappingCompleteness = (mapping: Record<ProviderId, unknown>, label: string) => {
+  const missing = PROVIDER_IDS.filter((id) => !(id in mapping));
+  if (missing.length > 0) {
+    throw new Error(`Provider mapping "${label}" is missing: ${missing.join(', ')}`);
+  }
 };
+
+assertProviderMappingCompleteness(providerModelSpecs, 'providerModelSpecs');
 
 const providerMeta: Record<ProviderId, ProviderMeta> = PROVIDER_IDS.reduce(
   (acc, id) => {
@@ -88,7 +47,7 @@ const providerMeta: Record<ProviderId, ProviderMeta> = PROVIDER_IDS.reduce(
   {} as Record<ProviderId, ProviderMeta>
 );
 
-const providerDefinitionLoaders: Record<ProviderId, ProviderDefinitionLoader> = {
+const providerDefinitionLoaders = {
   gemini: async () => (await import('./geminiProvider')).geminiProviderDefinition,
   openai: async () => (await import('./openaiProvider')).openaiProviderDefinition,
   'openai-compatible': async () =>
@@ -98,7 +57,9 @@ const providerDefinitionLoaders: Record<ProviderId, ProviderDefinitionLoader> = 
   glm: async () => (await import('./glmProvider')).glmProviderDefinition,
   minimax: async () => (await import('./minimaxProvider')).minimaxProviderDefinition,
   moonshot: async () => (await import('./moonshotProvider')).moonshotProviderDefinition,
-};
+} as const satisfies Record<ProviderId, ProviderDefinitionLoader>;
+
+assertProviderMappingCompleteness(providerDefinitionLoaders, 'providerDefinitionLoaders');
 
 class DeferredProvider implements ProviderChat {
   private providerPromise: Promise<ProviderChat> | null = null;
@@ -109,6 +70,7 @@ class DeferredProvider implements ProviderChat {
   private baseUrl?: string;
   private customHeaders?: ProviderCustomHeader[];
   private tavilyConfig?: TavilyConfig;
+  private embeddingConfig?: GeminiEmbeddingConfig;
 
   constructor(
     private readonly id: ProviderId,
@@ -136,6 +98,9 @@ class DeferredProvider implements ProviderChat {
         }
         if (provider.setTavilyConfig && this.tavilyConfig !== undefined) {
           provider.setTavilyConfig(this.tavilyConfig);
+        }
+        if (provider.setEmbeddingConfig && this.embeddingConfig !== undefined) {
+          provider.setEmbeddingConfig(this.embeddingConfig);
         }
 
         this.loadedProvider = provider;
@@ -201,6 +166,22 @@ class DeferredProvider implements ProviderChat {
   setTavilyConfig?(config: TavilyConfig | undefined): void {
     this.tavilyConfig = config;
     this.loadedProvider?.setTavilyConfig?.(config);
+  }
+
+  getEmbeddingConfig?(): GeminiEmbeddingConfig | undefined {
+    if (this.loadedProvider?.getEmbeddingConfig) {
+      return this.loadedProvider.getEmbeddingConfig();
+    }
+    return this.embeddingConfig;
+  }
+
+  setEmbeddingConfig?(config: GeminiEmbeddingConfig | undefined): void {
+    this.embeddingConfig = config;
+    this.loadedProvider?.setEmbeddingConfig?.(config);
+  }
+
+  consumePendingResponseMetadata?() {
+    return this.loadedProvider?.consumePendingResponseMetadata?.();
   }
 
   resetChat(): void {

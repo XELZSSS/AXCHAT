@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useReducer } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useReducer } from 'react';
 import { listProviderIds } from '../../services/providers/registry';
 import { DEFAULT_MAX_TOOL_CALL_ROUNDS } from '../../services/providers/utils';
-import { ProviderId, TavilyConfig } from '../../types';
+import { GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '../../types';
 import { t } from '../../utils/i18n';
 import { providerMeta, resolveBaseUrlForProvider } from './constants';
 import { ActiveSettingsTab, settingsModalReducer, SettingsModalState } from './reducer';
@@ -22,6 +22,11 @@ const getStoredProxyStaticHttp2 = (): boolean => {
   return stored === '1' || stored === 'true' || stored === 'yes' || stored === 'on';
 };
 
+const getStoredProxyAllowHttpTargets = (): boolean => {
+  const stored = (readStoredString('proxyAllowHttpTargets') ?? '').trim().toLowerCase();
+  return stored === '1' || stored === 'true' || stored === 'yes' || stored === 'on';
+};
+
 type BuildStateInput = {
   providerId: ProviderId;
   modelName: string;
@@ -29,6 +34,7 @@ type BuildStateInput = {
   baseUrl?: string;
   customHeaders?: Array<{ key: string; value: string }>;
   tavily?: TavilyConfig;
+  embedding?: GeminiEmbeddingConfig;
 };
 
 const buildStateFromInput = (input: BuildStateInput): SettingsModalState => {
@@ -41,9 +47,11 @@ const buildStateFromInput = (input: BuildStateInput): SettingsModalState => {
     baseUrl: resolvedBaseUrl,
     customHeaders: input.customHeaders ?? [],
     tavily: input.tavily ?? {},
+    embedding: input.embedding ?? {},
     showApiKey: false,
     showTavilyKey: false,
     staticProxyHttp2Enabled: getStoredProxyStaticHttp2(),
+    allowHttpTargets: getStoredProxyAllowHttpTargets(),
     toolCallMaxRounds: getStoredToolRounds(),
     activeTab: 'provider',
   };
@@ -63,6 +71,7 @@ export const useSettingsForm = ({
   baseUrl,
   customHeaders,
   tavily,
+  embedding,
 }: UseSettingsFormOptions) => {
   const stateSeed = useMemo(
     () =>
@@ -73,13 +82,14 @@ export const useSettingsForm = ({
         baseUrl,
         customHeaders: customHeaders ?? [],
         tavily: tavily ?? {},
+        embedding: embedding ?? {},
       }),
-    [providerId, modelName, apiKey, baseUrl, customHeaders, tavily]
+    [providerId, modelName, apiKey, baseUrl, customHeaders, tavily, embedding]
   );
 
   const [state, dispatch] = useReducer(settingsModalReducer, stateSeed);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen) return;
     dispatch({ type: 'replace', payload: stateSeed });
   }, [isOpen, stateSeed]);
@@ -139,6 +149,7 @@ export const useSettingsForm = ({
         baseUrl: nextBaseUrl,
         customHeaders: nextSettings?.customHeaders ?? [],
         tavily: nextSettings?.tavily ?? {},
+        embedding: nextSettings?.embedding ?? {},
       },
     });
   };

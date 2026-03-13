@@ -1,21 +1,22 @@
 import { ProviderId } from '../../types';
 import { buildProxyUrl } from './proxy';
+import * as proxyConfig from '../../../shared/proxy-config';
 
 export type ProviderRegion = 'intl' | 'cn';
 
 const MINIMAX_BASE_URLS = {
-  intl: buildProxyUrl('/proxy/minimax-intl'),
-  cn: buildProxyUrl('/proxy/minimax-cn'),
+  intl: buildProxyUrl(proxyConfig.PROXY_ROUTES.minimaxIntl),
+  cn: buildProxyUrl(proxyConfig.PROXY_ROUTES.minimaxCn),
 } as const;
 
 const MOONSHOT_BASE_URLS = {
-  intl: buildProxyUrl('/proxy/moonshot-intl'),
-  cn: buildProxyUrl('/proxy/moonshot-cn'),
+  intl: buildProxyUrl(proxyConfig.PROXY_ROUTES.moonshotIntl),
+  cn: buildProxyUrl(proxyConfig.PROXY_ROUTES.moonshotCn),
 } as const;
 
 const GLM_BASE_URLS = {
-  intl: buildProxyUrl('/proxy/glm-intl'),
-  cn: buildProxyUrl('/proxy/glm-cn'),
+  intl: buildProxyUrl(proxyConfig.PROXY_ROUTES.glmIntl),
+  cn: buildProxyUrl(proxyConfig.PROXY_ROUTES.glmCn),
 } as const;
 
 const normalizeGlmBaseUrl = (value: string): string => {
@@ -80,11 +81,18 @@ export const getMoonshotBaseUrlForRegion = (region: ProviderRegion): string => {
 };
 
 export const getDefaultMoonshotBaseUrl = (): string => {
-  return resolveRegionalDefaultBaseUrl('moonshot', process.env.MOONSHOT_BASE_URL, MOONSHOT_BASE_URLS);
+  return resolveRegionalDefaultBaseUrl(
+    'moonshot',
+    process.env.MOONSHOT_BASE_URL,
+    MOONSHOT_BASE_URLS
+  );
 };
 
 export const getGlmBaseUrlForRegion = (region: ProviderRegion): string => {
-  return normalizeBaseUrlForProvider('glm', region === 'cn' ? GLM_BASE_URLS.cn : GLM_BASE_URLS.intl);
+  return normalizeBaseUrlForProvider(
+    'glm',
+    region === 'cn' ? GLM_BASE_URLS.cn : GLM_BASE_URLS.intl
+  );
 };
 
 export const getDefaultGlmBaseUrl = (): string => {

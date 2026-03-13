@@ -40,6 +40,7 @@ export const useAppSettings = ({
         baseUrl: value.baseUrl,
         customHeaders: value.customHeaders,
         tavily: value.tavily,
+        embedding: value.embedding,
       });
       const shouldSyncConversation =
         value.providerId !== currentProviderId ||
@@ -49,7 +50,8 @@ export const useAppSettings = ({
         (prev.baseUrl ?? '') !== (updatedSettings.baseUrl ?? '') ||
         JSON.stringify(prev.customHeaders ?? []) !==
           JSON.stringify(updatedSettings.customHeaders ?? []) ||
-        JSON.stringify(prev.tavily ?? {}) !== JSON.stringify(updatedSettings.tavily ?? {});
+        JSON.stringify(prev.tavily ?? {}) !== JSON.stringify(updatedSettings.tavily ?? {}) ||
+        JSON.stringify(prev.embedding ?? {}) !== JSON.stringify(updatedSettings.embedding ?? {});
 
       if (shouldSyncConversation) {
         chatService.setProvider(value.providerId);
@@ -60,6 +62,7 @@ export const useAppSettings = ({
 
       syncProviderState();
       void window.axchat?.setProxyStaticHttp2?.(value.staticProxyHttp2Enabled);
+      void window.axchat?.setProxyAllowHttpTargets?.(value.allowHttpTargets);
     },
     [chatService, currentProviderId, providerSettings, syncCurrentConversation, syncProviderState]
   );

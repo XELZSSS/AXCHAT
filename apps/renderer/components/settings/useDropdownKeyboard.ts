@@ -1,4 +1,4 @@
-import { Dispatch, KeyboardEvent, RefObject, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, KeyboardEvent, RefObject, SetStateAction, useState } from 'react';
 
 type UseDropdownKeyboardOptions = {
   open: boolean;
@@ -20,11 +20,6 @@ export const useDropdownKeyboard = ({
   onSelectIndex,
 }: UseDropdownKeyboardOptions) => {
   const [focusedIndex, setFocusedIndex] = useState(0);
-
-  useEffect(() => {
-    if (!open) return;
-    setFocusedIndex(selectedIndex);
-  }, [open, selectedIndex]);
 
   const openWithFocus = (nextIndex: number) => {
     updatePosition();
@@ -101,6 +96,7 @@ export const useDropdownKeyboard = ({
   return {
     focusedIndex,
     setFocusedIndex,
+    openWithFocus,
     closeMenu,
     handleTriggerKeyDown,
     handleMenuKeyDown,

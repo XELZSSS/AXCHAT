@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { Fragment } from 'react';
 import { t } from '../../utils/i18n';
 
 type ShortcutItem = {
@@ -6,10 +6,10 @@ type ShortcutItem = {
   description: string;
 };
 
-const KeyCaps: React.FC<{ keys: string[] }> = ({ keys }) => (
+const KeyCaps = ({ keys }: { keys: string[] }) => (
   <div className="flex flex-wrap items-center gap-1">
     {keys.map((key, index) => (
-      <React.Fragment key={`${key}-${index}`}>
+      <Fragment key={`${key}-${index}`}>
         <kbd className="rounded-lg border border-[var(--line-1)] bg-[var(--bg-2)] px-2 py-1 text-[11px] font-medium text-[var(--ink-2)]">
           {key}
         </kbd>
@@ -18,22 +18,19 @@ const KeyCaps: React.FC<{ keys: string[] }> = ({ keys }) => (
             +
           </span>
         )}
-      </React.Fragment>
+      </Fragment>
     ))}
   </div>
 );
 
-const ShortcutsTab: React.FC = () => {
-  const items = useMemo<ShortcutItem[]>(
-    () => [
-      { keys: ['Enter'], description: t('settings.modal.shortcuts.sendOrGenerate') },
-      { keys: ['Shift', 'Enter'], description: t('settings.modal.shortcuts.newLine') },
-      { keys: ['Esc'], description: t('settings.modal.shortcuts.closeSettings') },
-      { keys: ['Arrow', 'Home', 'End'], description: t('settings.modal.shortcuts.switchTabs') },
-      { keys: ['Arrow', 'Enter'], description: t('settings.modal.shortcuts.selectDropdown') },
-    ],
-    [t]
-  );
+const ShortcutsTab = () => {
+  const items: ShortcutItem[] = [
+    { keys: ['Enter'], description: t('settings.modal.shortcuts.sendOrGenerate') },
+    { keys: ['Shift', 'Enter'], description: t('settings.modal.shortcuts.newLine') },
+    { keys: ['Esc'], description: t('settings.modal.shortcuts.closeSettings') },
+    { keys: ['Arrow', 'Home', 'End'], description: t('settings.modal.shortcuts.switchTabs') },
+    { keys: ['Arrow', 'Enter'], description: t('settings.modal.shortcuts.selectDropdown') },
+  ];
   return (
     <div className="space-y-3">
       <div className="space-y-1">

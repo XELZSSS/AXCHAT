@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { SetStateAction } from 'react';
 import type { ChatService } from '../../../services/chatService';
 import { readAppStorage, writeAppStorage } from '../../../services/storageKeys';
 
@@ -27,9 +28,9 @@ export const useSearchToggle = ({
   tavilyAvailable,
   currentProviderId,
 }: UseSearchToggleOptions) => {
-  const [searchEnabled, setSearchEnabledState] = useState(readPersistedSearchEnabled);
+  const [preferredSearchEnabled, setSearchEnabledState] = useState(readPersistedSearchEnabled);
 
-  const setSearchEnabled = useCallback((value: React.SetStateAction<boolean>) => {
+  const setSearchEnabled = useCallback((value: SetStateAction<boolean>) => {
     setSearchEnabledState((prev) => {
       const next = typeof value === 'function' ? value(prev) : value;
       persistSearchEnabled(next);
@@ -37,16 +38,11 @@ export const useSearchToggle = ({
     });
   }, []);
 
-  useEffect(() => {
-    if (!tavilyAvailable && searchEnabled) {
-      setSearchEnabled(false);
-    }
-  }, [searchEnabled, setSearchEnabled, tavilyAvailable]);
+  const searchEnabled = resolveRuntimeSearchEnabled(preferredSearchEnabled, tavilyAvailable);
 
   useEffect(() => {
-    const nextEnabled = resolveRuntimeSearchEnabled(searchEnabled, tavilyAvailable);
-    chatService.setSearchEnabled(nextEnabled);
-  }, [chatService, currentProviderId, searchEnabled, tavilyAvailable]);
+    chatService.setSearchEnabled(searchEnabled);
+  }, [chatService, currentProviderId, searchEnabled]);
 
   return { searchEnabled, setSearchEnabled };
 };

@@ -1,6 +1,7 @@
 import { ChatMessage, ProviderId } from '../../types';
 import { listProviderIds } from '../providers/registry';
 import type { RequestPolicy } from '../providers/requestPolicy';
+import { ProviderResponseMetadata } from '../providers/types';
 import { ProviderSettings } from '../providers/defaults';
 import { ProviderSettingsRepository } from './providerSettingsRepository';
 import { ProviderRuntime } from './providerRuntime';
@@ -118,5 +119,9 @@ export class ChatOrchestrator {
     requestPolicy?: RequestPolicy
   ): AsyncGenerator<string, void, unknown> {
     yield* this.runtime.sendMessageStream(message, signal, requestPolicy);
+  }
+
+  consumePendingResponseMetadata(): ProviderResponseMetadata | undefined {
+    return this.runtime.consumePendingResponseMetadata();
   }
 }

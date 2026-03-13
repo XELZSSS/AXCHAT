@@ -19,6 +19,13 @@ const resolveProxyHost = (value) => normalizeString(value) ?? DEFAULT_PROXY_HOST
 
 const buildProxyOrigin = ({ host, port }) => `http://${host}:${port}`;
 
+const {
+  PROXY_PATH_PREFIX,
+  PROXY_ROUTES,
+  OPENAI_COMPATIBLE_ROUTE_PATTERNS,
+  STATIC_PROXY_ROUTES,
+} = require('./proxy-routes.cjs');
+
 module.exports = {
   DEFAULT_PROXY_PORT,
   DEFAULT_PROXY_HOST,
@@ -26,4 +33,9 @@ module.exports = {
   resolveProxyPort,
   resolveProxyHost,
   buildProxyOrigin,
+  PROXY_PATH_PREFIX,
+  PROXY_ROUTES,
+  OPENAI_COMPATIBLE_ROUTE_PATTERNS,
+  STATIC_PROXY_ROUTES,
+  resolveProxyPath: (routeId) => PROXY_ROUTES[routeId],
 };

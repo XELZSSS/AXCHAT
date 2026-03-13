@@ -1,5 +1,5 @@
-import React, { useCallback, useId, useMemo } from 'react';
-import { ProviderId, TavilyConfig } from '../types';
+import { useCallback, useId, useState } from 'react';
+import { GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '../types';
 import { t } from '../utils/i18n';
 import ProviderTab from './settingsModal/ProviderTab';
 import SearchTab from './settingsModal/SearchTab';
@@ -11,6 +11,9 @@ import { Button, Modal, Tabs } from './ui';
 import { checkForUpdates, openUpdateDownload } from '../services/updaterClient';
 import { CloseIcon, SaveOutlinedIcon } from './icons';
 
+const AUTHOR_NAME = 'XELZSSS';
+const AUTHOR_URL = 'https://github.com/XELZSSS';
+
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,13 +24,13 @@ interface SettingsModalProps {
   baseUrl?: string;
   customHeaders?: Array<{ key: string; value: string }>;
   tavily?: TavilyConfig;
+  embedding?: GeminiEmbeddingConfig;
   onSave: (value: SaveSettingsPayload) => void;
   appVersion: string;
   updaterStatus: import('../services/updaterClient').UpdaterStatus;
-  secretStorageInfo: { mode: 'secure' | 'plain'; backend: string };
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({
+const SettingsModal = ({
   isOpen,
   onClose,
   providerSettings,
@@ -37,24 +40,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   baseUrl,
   customHeaders,
   tavily,
+  embedding,
   onSave,
   appVersion,
   updaterStatus,
-  secretStorageInfo,
-}) => {
-  const AUTHOR_NAME = 'XELZSSS';
-  const AUTHOR_URL = 'https://github.com/XELZSSS';
+}: SettingsModalProps) => {
   const modalTitleId = useId();
   const tabsIdPrefix = useId();
-  const updaterStatusTextMap = useMemo(
-    () => ({
-      checking: t('settings.update.status.checking'),
-      'not-available': t('settings.update.status.latest'),
-      error: t('settings.update.status.failed'),
-      disabled: t('settings.update.status.disabled'),
-    }),
-    [t]
-  );
+  const updaterStatusTextMap = {
+    checking: t('settings.update.status.checking'),
+    'not-available': t('settings.update.status.latest'),
+    error: t('settings.update.status.failed'),
+    disabled: t('settings.update.status.disabled'),
+  };
 
   const {
     state,
@@ -79,6 +77,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     baseUrl,
     customHeaders,
     tavily,
+    embedding,
   });
 
   const handleCheckForUpdates = useCallback(async () => {
@@ -97,19 +96,45 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     window.open(AUTHOR_URL, '_blank', 'noopener,noreferrer');
   }, []);
 
-  const updateStatusText = useMemo((): string => {
+  const [clearCacheNotice, setClearCacheNotice] = useState<string | null>(null);
+  const [clearCacheStatus, setClearCacheStatus] = useState<'success' | 'error' | null>(null);
+
+  const resetClearCacheNotice = useCallback(() => {
+    setTimeout(() => {
+      setClearCacheNotice(null);
+      setClearCacheStatus(null);
+    }, 2500);
+  }, []);
+
+  const handleClearCache = useCallback(async () => {
+    try {
+      const result = await window.axchat?.clearCache?.();
+      if (result?.ok) {
+        setClearCacheNotice(t('settings.clearCache.success'));
+        setClearCacheStatus('success');
+        resetClearCacheNotice();
+      }
+    } catch (error) {
+      console.error('Failed to clear user data:', error);
+      setClearCacheNotice(t('settings.clearCache.failed'));
+      setClearCacheStatus('error');
+      resetClearCacheNotice();
+    }
+  }, [resetClearCacheNotice]);
+
+  const updateStatusText = (() => {
     if (updaterStatus.status === 'available') {
       return updaterStatus.availableVersion
         ? `${t('settings.update.status.availableVersionPrefix')} v${updaterStatus.availableVersion}${t('settings.update.status.availableVersionSuffix')}`
         : t('settings.update.status.available');
     }
     return updaterStatusTextMap[updaterStatus.status] ?? '';
-  }, [t, updaterStatus.availableVersion, updaterStatus.status, updaterStatusTextMap]);
+  })();
 
   return (
     <Modal
       isOpen={isOpen}
-      className="max-w-5xl"
+      className="max-w-3xl"
       overlayRef={overlayRef}
       onClose={onClose}
       ariaLabelledBy={modalTitleId}
@@ -122,15 +147,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <Button
             onClick={onClose}
             variant="ghost"
-            size="sm"
-            className="!px-1.5 !py-1 !bg-transparent hover:!bg-[var(--bg-2)] text-[var(--ink-3)] hover:text-[var(--ink-1)]"
+            size="icon"
+            className="rounded-full !bg-transparent !p-0 text-[var(--ink-3)] hover:!bg-[var(--bg-2)] hover:text-[var(--ink-1)]"
             aria-label={t('settings.modal.cancel')}
           >
-            <CloseIcon sx={{ fontSize: 18 }} />
+            <CloseIcon sx={{ fontSize: 16 }} />
           </Button>
         </div>
 
-        <div className="flex h-[76vh] flex-col gap-4 overflow-hidden p-4 sm:flex-row">
+        <div className="flex h-[76vh] min-h-0 flex-col gap-4 overflow-hidden p-4 sm:flex-row">
           <Tabs
             items={tabs}
             activeId={state.activeTab}
@@ -139,7 +164,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           />
 
           <div
-            className="settings-modal-scrollbar-hide flex-1 overflow-y-auto pl-2 pr-4 pt-1 sm:pl-4 sm:pr-6 sm:pt-2"
+            className="settings-modal-scroll-panel settings-modal-scrollbar-hide min-h-0 min-w-0 flex-1 overflow-y-auto pl-2 pr-4 pt-1 sm:pl-4 sm:pr-6 sm:pt-2"
             role="tabpanel"
             id={`${tabsIdPrefix}-panel-${state.activeTab}`}
             aria-labelledby={`${tabsIdPrefix}-tab-${state.activeTab}`}
@@ -153,12 +178,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 apiKey={state.apiKey}
                 baseUrl={state.baseUrl}
                 customHeaders={state.customHeaders}
+                embedding={state.embedding}
                 showApiKey={state.showApiKey}
                 supportsBaseUrl={activeMeta?.supportsBaseUrl}
                 supportsCustomHeaders={activeMeta?.supportsCustomHeaders}
                 supportsRegion={activeMeta?.supportsRegion}
                 isOfficialProvider={activeMeta?.isOfficialProvider}
-                secretStorageInfo={secretStorageInfo}
                 portalContainer={portalContainer}
                 onProviderChange={providerActions.onProviderChange}
                 onModelNameChange={providerActions.onModelNameChange}
@@ -166,6 +191,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 onToggleApiKeyVisibility={providerActions.onToggleApiKeyVisibility}
                 onClearApiKey={providerActions.onClearApiKey}
                 onBaseUrlChange={providerActions.onBaseUrlChange}
+                onSetEmbeddingField={providerActions.onSetEmbeddingField}
                 onAddCustomHeader={providerActions.onAddCustomHeader}
                 onSetCustomHeaderKey={providerActions.onSetCustomHeaderKey}
                 onSetCustomHeaderValue={providerActions.onSetCustomHeaderValue}
@@ -193,9 +219,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 updateStatusText={updateStatusText}
                 updaterStatus={updaterStatus.status}
                 staticProxyHttp2Enabled={state.staticProxyHttp2Enabled}
+                allowHttpTargets={state.allowHttpTargets}
                 onCheckForUpdates={handleCheckForUpdates}
                 onOpenUpdateDownload={handleOpenUpdateDownload}
                 onSetStaticProxyHttp2Enabled={versionActions.onSetStaticProxyHttp2Enabled}
+                onSetAllowHttpTargets={versionActions.onSetAllowHttpTargets}
+                onOpenClearCache={handleClearCache}
+                clearCacheNotice={clearCacheNotice}
+                clearCacheStatus={clearCacheStatus}
               />
             )}
 

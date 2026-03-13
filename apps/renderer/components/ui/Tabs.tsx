@@ -1,4 +1,5 @@
-import React, { useCallback, useId, useMemo, useRef } from 'react';
+import { useCallback, useId, useRef } from 'react';
+import type { KeyboardEvent } from 'react';
 import { cn } from './cn';
 
 type TabItem<T extends string> = {
@@ -15,10 +16,10 @@ type TabsProps<T extends string> = {
 };
 
 const TAB_BASE =
-  'rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors duration-160 ease-out';
+  'rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors duration-160 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)]';
 
 const TAB_STYLES = {
-  active: 'bg-[var(--bg-2)] text-[var(--ink-1)] ring-1 ring-[var(--line-1)]',
+  active: 'bg-[var(--bg-2)] text-[var(--ink-1)] ring-1 ring-[var(--action-interactive)]',
   inactive: 'text-[var(--ink-3)] hover:bg-[var(--bg-2)] hover:text-[var(--ink-1)]',
 } as const;
 
@@ -36,7 +37,7 @@ const Tabs = <T extends string>({
 }: TabsProps<T>) => {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const autoId = useId().replace(/:/g, '');
-  const prefix = useMemo(() => idPrefix ?? `tabs-${autoId}`, [autoId, idPrefix]);
+  const prefix = idPrefix ?? `tabs-${autoId}`;
 
   const focusAndSelect = useCallback(
     (index: number) => {
@@ -50,7 +51,7 @@ const Tabs = <T extends string>({
   );
 
   const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
       const { key } = event;
       const len = items.length;
       if (len === 0) return;

@@ -2,8 +2,8 @@
 (function () {
   var DEFAULT_THEME = 'dark';
   var THEME_KEY = 'axchat_theme';
-  var DARK_BG = '#09090b';
-  var LIGHT_BG = '#f5f7fb';
+  var DARK_BG = '#101010';
+  var LIGHT_BG = '#f8f8f8';
 
   var applyTheme = function (theme) {
     var resolved = theme === 'light' ? 'light' : 'dark';

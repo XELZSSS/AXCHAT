@@ -23,12 +23,13 @@ const PROXY_STATE_FILE_NAME = 'proxy-state.json';
 const getProxyStatePath = (app) => path.join(app.getPath('userData'), PROXY_STATE_FILE_NAME);
 
 const loadProxyState = (app) => {
-  const fallback = { staticHttp2Enabled: false };
+  const fallback = { staticHttp2Enabled: false, allowHttpTargets: false };
   try {
     const raw = fs.readFileSync(getProxyStatePath(app), 'utf-8');
     const parsed = JSON.parse(raw);
     return {
       staticHttp2Enabled: parsed?.staticHttp2Enabled === true,
+      allowHttpTargets: parsed?.allowHttpTargets === true,
     };
   } catch {
     return fallback;

@@ -5,3 +5,4 @@ export { default as Field } from './Field';
 export { default as Toggle } from './Toggle';
 export { default as Modal } from './Modal';
 export { default as Tabs } from './Tabs';
+export { default as ConfirmDialog } from './ConfirmDialog';

@@ -1,6 +1,7 @@
 import { GoogleGenAI, type Model as GeminiModel } from '@google/genai';
 import OpenAI from 'openai';
 import { ProviderId } from '../../types';
+import { PROVIDER_IDS } from '../../../shared/provider-ids';
 import { t } from '../../utils/i18n';
 
 type DiscoverProviderModelsOptions = {
@@ -13,6 +14,15 @@ const OPENAI_MODELS_BASE_URL = process.env.OPENAI_BASE_URL;
 const XAI_MODELS_BASE_URL = process.env.XAI_BASE_URL ?? 'https://api.x.ai/v1';
 const DEEPSEEK_MODELS_BASE_URL = process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com';
 const MODEL_DISCOVERY_PROVIDERS: ProviderId[] = ['openai', 'gemini', 'xai', 'deepseek'];
+
+const assertProviderSubset = (subset: ProviderId[], label: string) => {
+  const invalid = subset.filter((id) => !PROVIDER_IDS.includes(id));
+  if (invalid.length > 0) {
+    throw new Error(`Provider list "${label}" has unknown ids: ${invalid.join(', ')}`);
+  }
+};
+
+assertProviderSubset(MODEL_DISCOVERY_PROVIDERS, 'MODEL_DISCOVERY_PROVIDERS');
 
 const sortModels = (models: string[]): string[] => {
   return [...models].sort((left, right) =>

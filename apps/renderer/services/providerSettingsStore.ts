@@ -2,10 +2,14 @@ import { ProviderId } from '../types';
 import { buildDefaultProviderSettings, ProviderSettings } from './providers/defaults';
 import { normalizeBaseUrlForProvider } from './providers/baseUrl';
 import { normalizeCustomHeaders as normalizeHeaders } from './providers/headerUtils';
+import { PROVIDER_IDS as RAW_PROVIDER_IDS } from '../../shared/provider-ids';
 import { listProviderIds } from './providers/registry';
+import { normalizeGeminiEmbeddingConfig } from './providers/geminiEmbeddings';
 import { normalizeTavilyConfig } from './providers/tavily';
 import { sanitizeApiKey } from './providers/utils';
 import { readAppStorage, writeAppStorage } from './storageKeys';
+
+const canUseAppStorage = (): boolean => typeof window !== 'undefined';
 
 const normalizeModelName = (value?: string): string => {
   const trimmed = value?.trim();
@@ -53,10 +57,25 @@ const applyResolvedGlobalTavily = (
   return applyGlobalTavilyConfig(settings, resolveGlobalTavilyConfig(settings));
 };
 
+const normalizeStoredProviderSettings = (
+  providerId: ProviderId,
+  defaults: ProviderSettings,
+  storedSettings: Partial<ProviderSettings>
+): ProviderSettings => {
+  return {
+    apiKey: sanitizeApiKey(storedSettings.apiKey) ?? defaults.apiKey,
+    modelName: normalizeModelName(storedSettings.modelName),
+    baseUrl: normalizeBaseUrl(providerId, storedSettings.baseUrl) ?? defaults.baseUrl,
+    customHeaders: normalizeStoredCustomHeaders(storedSettings.customHeaders) ?? defaults.customHeaders,
+    tavily: normalizeTavilyConfig(storedSettings.tavily) ?? defaults.tavily,
+    embedding: normalizeGeminiEmbeddingConfig(storedSettings.embedding) ?? defaults.embedding,
+  };
+};
+
 export const loadActiveProviderId = (): ProviderId => {
   const available = listProviderIds();
-  const fallbackProviderId = available[0] ?? 'gemini';
-  if (typeof window === 'undefined') {
+  const fallbackProviderId = available[0] ?? RAW_PROVIDER_IDS[0] ?? 'gemini';
+  if (!canUseAppStorage()) {
     return fallbackProviderId;
   }
   try {
@@ -71,7 +90,7 @@ export const loadActiveProviderId = (): ProviderId => {
 };
 
 export const persistActiveProviderId = (providerId: ProviderId): void => {
-  if (typeof window === 'undefined') return;
+  if (!canUseAppStorage()) return;
   try {
     writeAppStorage('activeProvider', providerId);
   } catch (error) {
@@ -81,7 +100,7 @@ export const persistActiveProviderId = (providerId: ProviderId): void => {
 
 export const loadProviderSettings = (): Record<ProviderId, ProviderSettings> => {
   let defaults = buildDefaultProviderSettings();
-  if (typeof window === 'undefined') {
+  if (!canUseAppStorage()) {
     return applyResolvedGlobalTavily(defaults);
   }
 
@@ -101,19 +120,12 @@ export const loadProviderSettings = (): Record<ProviderId, ProviderSettings> => 
       const storedSettings = parsed[id];
       if (!storedSettings) continue;
 
-      const normalizedBaseUrl = normalizeBaseUrl(id, storedSettings.baseUrl);
-      if (normalizedBaseUrl !== storedSettings.baseUrl?.trim()) {
+      const normalizedSettings = normalizeStoredProviderSettings(id, defaults[id], storedSettings);
+      if (normalizedSettings.baseUrl !== storedSettings.baseUrl?.trim()) {
         didMigrate = true;
       }
 
-      defaults[id] = {
-        apiKey: sanitizeApiKey(storedSettings.apiKey) ?? defaults[id].apiKey,
-        modelName: normalizeModelName(storedSettings.modelName),
-        baseUrl: normalizedBaseUrl ?? defaults[id].baseUrl,
-        customHeaders:
-          normalizeStoredCustomHeaders(storedSettings.customHeaders) ?? defaults[id].customHeaders,
-        tavily: normalizeTavilyConfig(storedSettings.tavily) ?? defaults[id].tavily,
-      };
+      defaults[id] = normalizedSettings;
     }
 
     defaults = applyResolvedGlobalTavily(defaults);
@@ -128,7 +140,7 @@ export const loadProviderSettings = (): Record<ProviderId, ProviderSettings> => 
 };
 
 export const persistProviderSettings = (settings: Record<ProviderId, ProviderSettings>): void => {
-  if (typeof window === 'undefined') return;
+  if (!canUseAppStorage()) return;
   try {
     writeAppStorage('providerSettings', JSON.stringify(settings));
   } catch (error) {
@@ -154,5 +166,9 @@ export const normalizeProviderSettingsUpdate = (
         ? normalizeStoredCustomHeaders(updates.customHeaders)
         : current.customHeaders,
     tavily: updates.tavily !== undefined ? normalizeTavilyConfig(updates.tavily) : current.tavily,
+    embedding:
+      updates.embedding !== undefined
+        ? normalizeGeminiEmbeddingConfig(updates.embedding)
+        : current.embedding,
   };
 };

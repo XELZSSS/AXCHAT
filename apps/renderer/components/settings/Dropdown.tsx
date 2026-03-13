@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDropdownKeyboard } from './useDropdownKeyboard';
 import { useDropdownPosition } from './useDropdownPosition';
@@ -17,13 +17,13 @@ type DropdownProps = {
   portalContainer?: HTMLElement | null;
 };
 
-const Dropdown: React.FC<DropdownProps> = ({
+const Dropdown = ({
   value,
   options,
   onChange,
   widthClassName,
   portalContainer,
-}) => {
+}: DropdownProps) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -54,21 +54,27 @@ const Dropdown: React.FC<DropdownProps> = ({
     onRequestClose: handleRequestClose,
   });
 
-  const { focusedIndex, setFocusedIndex, closeMenu, handleTriggerKeyDown, handleMenuKeyDown } =
-    useDropdownKeyboard({
-      open,
-      setOpen,
-      selectedIndex,
-      lastIndex,
-      triggerRef,
-      updatePosition,
-      onSelectIndex: (index) => {
-        const option = options[index];
-        if (!option) return;
-        onChange(option.value);
-        closeMenu();
-      },
-    });
+  const {
+    focusedIndex,
+    setFocusedIndex,
+    openWithFocus,
+    closeMenu,
+    handleTriggerKeyDown,
+    handleMenuKeyDown,
+  } = useDropdownKeyboard({
+    open,
+    setOpen,
+    selectedIndex,
+    lastIndex,
+    triggerRef,
+    updatePosition,
+    onSelectIndex: (index) => {
+      const option = options[index];
+      if (!option) return;
+      onChange(option.value);
+      closeMenu();
+    },
+  });
 
   useEffect(() => {
     if (!open || !menuReady) return;
@@ -83,11 +89,14 @@ const Dropdown: React.FC<DropdownProps> = ({
         ref={triggerRef}
         type="button"
         onClick={() => {
-          updatePosition();
-          setOpen((prev) => !prev);
+          if (open) {
+            setOpen(false);
+            return;
+          }
+          openWithFocus(selectedIndex);
         }}
         onKeyDown={handleTriggerKeyDown}
-        className="flex w-full items-center justify-between rounded-lg bg-[var(--bg-2)] px-2.5 py-1.5 text-xs text-[var(--ink-2)] outline-none ring-1 ring-[var(--line-1)] focus:ring-[var(--line-1)]"
+        className="flex w-full items-center justify-between rounded-lg bg-[var(--bg-2)] px-2.5 py-1.5 text-xs text-[var(--ink-2)] outline-none ring-1 ring-[var(--line-1)] focus:ring-[var(--action-interactive)]"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}

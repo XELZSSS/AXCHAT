@@ -169,7 +169,6 @@ contextBridge.exposeInMainWorld('axchat', {
   readStoredAppValue,
   writeStoredAppValue,
   removeStoredAppValue,
-  getSecretStorageInfo: () => ipcRenderer.invoke('storage:secrets:get-info'),
   minimize: () => ipcRenderer.invoke('window:minimize'),
   toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize'),
   close: () => ipcRenderer.invoke('window:close'),
@@ -181,6 +180,8 @@ contextBridge.exposeInMainWorld('axchat', {
   getUpdaterStatus: () => ipcRenderer.invoke('updater:get-status'),
   openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
   setProxyStaticHttp2: (enabled) => ipcRenderer.invoke('proxy:set-static-http2', enabled),
+  setProxyAllowHttpTargets: (enabled) =>
+    ipcRenderer.invoke('proxy:set-allow-http-targets', enabled),
   syncOfficialProviderCatalog: (providerId) =>
     ipcRenderer.invoke('models:sync-official-preview', providerId),
   listStoredSessions: () => ipcRenderer.invoke('storage:sessions:list'),
@@ -193,7 +194,6 @@ contextBridge.exposeInMainWorld('axchat', {
   renameStoredSession: (payload) => ipcRenderer.invoke('storage:sessions:rename', payload),
   deleteStoredSession: (sessionId) => ipcRenderer.invoke('storage:sessions:delete', sessionId),
   searchStoredSessions: (payload) => ipcRenderer.invoke('storage:sessions:search', payload),
-  getProxyToken: () => process.env.AXCHAT_PROXY_TOKEN,
   getProxyPort: () => resolveProxyPort(process.env.MINIMAX_PROXY_PORT),
   getProxyHost: () => resolveProxyHost(process.env.MINIMAX_PROXY_HOST),
   onMaximizeChanged: (callback) => {
@@ -215,5 +215,6 @@ contextBridge.exposeInMainWorld('axchat', {
   },
   setTrayLanguage: (language) => ipcRenderer.invoke('tray:set-language', language),
   setTrayLabels: (labels) => ipcRenderer.invoke('tray:set-labels', labels),
+  clearCache: () => ipcRenderer.invoke('app:clear-cache'),
   notifyBootstrapReady: () => ipcRenderer.send('app:bootstrap-ready'),
 });

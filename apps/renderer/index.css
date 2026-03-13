@@ -2,25 +2,40 @@
 
 :root {
   /* Foundation Colors */
-  --color-black-950: #09090b;
-  --color-black-900: #0b0b0d;
-  --color-black-800: #18181b;
-  --color-neutral-700: #27272a;
-  --color-neutral-500: #a1a1aa;
-  --color-neutral-200: #e4e4e7;
-  --color-neutral-100: #f4f4f5;
+  --color-black-950: #101010;
+  --color-black-900: #1e1e1e;
+  --color-black-800: #151515;
+  --color-neutral-700: #282828;
+  --color-neutral-500: #6b6b6b;
+  --color-neutral-200: #9e9e9e;
+  --color-neutral-100: #ededed;
   --color-white: #ffffff;
 
   /* Semantic Colors */
   --surface-canvas: var(--color-black-950);
   --surface-panel: var(--color-black-900);
   --surface-raised: var(--color-black-800);
-  --text-primary: var(--color-neutral-100);
-  --text-secondary: var(--color-neutral-200);
-  --text-muted: var(--color-neutral-500);
-  --stroke-default: var(--color-neutral-700);
-  --action-primary: var(--color-neutral-100);
-  --action-primary-strong: var(--color-white);
+  --text-primary: rgba(255, 255, 255, 0.936);
+  --text-secondary: rgba(255, 255, 255, 0.618);
+  --text-muted: rgba(255, 255, 255, 0.422);
+  --stroke-default: rgba(255, 255, 255, 0.195);
+  --action-primary: #fab283;
+  --action-primary-strong: #eda779;
+  --action-interactive: #034cff;
+  --action-interactive-weak: #0b1730;
+  --status-success: #12c905;
+  --status-warning: #fcd53a;
+  --status-error: #fc533a;
+  --status-info: #edb2f1;
+  --text-on-interactive: #ededed;
+  --text-on-brand: rgba(255, 255, 255, 0.603);
+  --text-on-brand-strong: #ffffff;
+  --text-on-warning: rgba(255, 255, 255, 0.603);
+  --status-error-bg: #1f0603;
+  --status-error-border: #fc533a;
+  --status-warning-bg: #fdf3cf;
+  --status-warning-border: #fcd53a;
+  --overlay-bg: rgba(0, 0, 0, 0.8);
 
   /* Spacing Tokens */
   --space-1: 4px;
@@ -48,13 +63,13 @@
   --z-titlebar: 40;
   --z-sidebar: 30;
   --z-modal: 70;
-  --selection-bg: #3f3f46;
-  --selection-fg: #ffffff;
-  --titlebar-hover: #1a1d20;
-  --titlebar-close-hover: #9f2f2f;
-  --scrollbar-thumb: #2c333a;
-  --scrollbar-thumb-hover: #3a424a;
-  --code-inline-bg: rgba(216, 210, 198, 0.1);
+  --selection-bg: #091f52;
+  --selection-fg: #ededed;
+  --titlebar-hover: rgba(255, 255, 255, 0.039);
+  --titlebar-close-hover: #fc533a;
+  --scrollbar-thumb: #282828;
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.195);
+  --code-inline-bg: rgba(255, 255, 255, 0.031);
 
   /* Backward-Compatible Aliases */
   --bg-0: var(--surface-canvas);
@@ -72,24 +87,39 @@
 }
 
 :root[data-theme='light'] {
-  --surface-canvas: #f8f9fb;
-  --surface-panel: #ffffff;
-  --surface-raised: #f1f3f7;
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #4b5563;
-  --stroke-default: #e5e7eb;
-  --action-primary: #e5e7eb;
-  --action-primary-strong: #d1d5db;
-  --shadow-1: 0 18px 48px rgba(15, 23, 42, 0.1);
-  --shadow-2: 0 10px 28px rgba(15, 23, 42, 0.08);
-  --selection-bg: #dbe5ff;
-  --selection-fg: #0f172a;
-  --titlebar-hover: #e5e7eb;
-  --titlebar-close-hover: #ef4444;
-  --scrollbar-thumb: #d1d5db;
-  --scrollbar-thumb-hover: #9ca3af;
-  --code-inline-bg: rgba(17, 24, 39, 0.06);
+  --surface-canvas: #f8f8f8;
+  --surface-panel: #f3f3f3;
+  --surface-raised: #fcfcfc;
+  --text-primary: #171717;
+  --text-secondary: #6f6f6f;
+  --text-muted: #8f8f8f;
+  --stroke-default: rgba(0, 0, 0, 0.162);
+  --action-primary: #dcde8d;
+  --action-primary-strong: #d0d283;
+  --action-interactive: #034cff;
+  --action-interactive-weak: #ecf3ff;
+  --status-success: #12c905;
+  --status-warning: #ffdc17;
+  --status-error: #fc533a;
+  --status-info: #a753ae;
+  --text-on-interactive: #fcfcfc;
+  --text-on-brand: rgba(0, 0, 0, 0.574);
+  --text-on-brand-strong: rgba(0, 0, 0, 0.915);
+  --text-on-warning: rgba(0, 0, 0, 0.574);
+  --status-error-bg: #fff2f0;
+  --status-error-border: #fc533a;
+  --status-warning-bg: #fcf3cb;
+  --status-warning-border: #ffdc17;
+  --overlay-bg: rgba(0, 0, 0, 0.8);
+  --shadow-1: 0 18px 48px rgba(0, 0, 0, 0.15);
+  --shadow-2: 0 10px 28px rgba(0, 0, 0, 0.12);
+  --selection-bg: #ecf3ff;
+  --selection-fg: #fcfcfc;
+  --titlebar-hover: rgba(0, 0, 0, 0.059);
+  --titlebar-close-hover: #fc533a;
+  --scrollbar-thumb: #e5e5e5;
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.162);
+  --code-inline-bg: rgba(0, 0, 0, 0.031);
 }
 
 html,
@@ -210,8 +240,13 @@ body.electron .chat-main {
   background: var(--titlebar-hover);
 }
 
+.titlebar-btn-close {
+  background: transparent;
+  color: var(--ink-2);
+}
+
 .titlebar-btn-close:hover {
-  background: var(--titlebar-close-hover);
+  background: #ff3b30;
   color: #ffffff;
 }
 
@@ -258,6 +293,14 @@ input[type='password']::-ms-clear {
 .settings-modal-scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.settings-modal-scroll-panel {
+  overscroll-behavior: contain;
+  contain: layout paint;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: scroll-position;
 }
 
 .settings-modal-scrollbar-hide::-webkit-scrollbar {

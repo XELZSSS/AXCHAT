@@ -26,6 +26,7 @@ const APP_STORAGE_BOOTSTRAP_KEYS = [
   'settingsActiveTab',
   'toolCallMaxRounds',
   'proxyStaticHttp2',
+  'proxyAllowHttpTargets',
 ];
 
 let mainWindow = null;
@@ -177,7 +178,7 @@ const createMainWindow = async ({ isDev, shouldPreventClose }) => {
     minHeight: MIN_WINDOW_SIZE.height,
     x: state.x,
     y: state.y,
-    show: true,
+    show: isDev,
     backgroundColor: getWindowBackgroundColor(initialTheme),
     transparent: false,
     autoHideMenuBar: true,
@@ -217,18 +218,23 @@ const createMainWindow = async ({ isDev, shouldPreventClose }) => {
 
   ipcMain.on('app:bootstrap-ready', onBootstrapReady);
 
-  const bootstrapTimeout = setTimeout(() => {
-    if (!mainWindow || mainWindow.isDestroyed() || hasShownWindow) return;
-    showMainWindowOnce();
-  }, BOOTSTRAP_SHOW_TIMEOUT_MS);
+  const bootstrapTimeout = setTimeout(
+    () => {
+      if (!mainWindow || mainWindow.isDestroyed() || hasShownWindow) return;
+      showMainWindowOnce();
+    },
+    isDev ? BOOTSTRAP_SHOW_TIMEOUT_MS : Math.max(1500, BOOTSTRAP_SHOW_TIMEOUT_MS)
+  );
 
-  mainWindow.once('ready-to-show', () => {
-    showMainWindowOnce();
-  });
+  if (isDev) {
+    mainWindow.once('ready-to-show', () => {
+      showMainWindowOnce();
+    });
 
-  mainWindow.webContents.once('did-finish-load', () => {
-    showMainWindowOnce();
-  });
+    mainWindow.webContents.once('did-finish-load', () => {
+      showMainWindowOnce();
+    });
+  }
 
   mainWindow.on('close', (event) => {
     if (shouldPreventClose?.()) {

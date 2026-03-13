@@ -3,6 +3,11 @@ type KeyDefinition = {
   legacy: readonly string[];
 };
 
+type NativeAppStorage = Pick<
+  NonNullable<Window['axchat']>,
+  'readStoredAppValue' | 'writeStoredAppValue' | 'removeStoredAppValue'
+>;
+
 const STORAGE_KEYS = {
   sessions: {
     current: 'axchat_session_index_v1',
@@ -44,16 +49,16 @@ const STORAGE_KEYS = {
     current: 'axchat_proxy_static_http2',
     legacy: [],
   },
+  proxyAllowHttpTargets: {
+    current: 'axchat_proxy_allow_http_targets',
+    legacy: [],
+  },
   appVersion: {
     current: 'axchat_app_version',
     legacy: [],
   },
   updaterStatus: {
     current: 'axchat_updater_status',
-    legacy: [],
-  },
-  secretStorageInfo: {
-    current: 'axchat_secret_storage_info',
     legacy: [],
   },
 } as const satisfies Record<string, KeyDefinition>;
@@ -69,13 +74,17 @@ const getLocalStorage = (): Storage | null => {
   }
 };
 
-const hasNativeAppStorage = (): boolean => {
-  return (
-    typeof window !== 'undefined' &&
-    Boolean(window.axchat?.readStoredAppValue) &&
-    Boolean(window.axchat?.writeStoredAppValue) &&
-    Boolean(window.axchat?.removeStoredAppValue)
-  );
+const getNativeAppStorage = (): NativeAppStorage | null => {
+  if (
+    typeof window === 'undefined' ||
+    !window.axchat?.readStoredAppValue ||
+    !window.axchat?.writeStoredAppValue ||
+    !window.axchat?.removeStoredAppValue
+  ) {
+    return null;
+  }
+
+  return window.axchat;
 };
 
 const safeGetItem = (storage: Storage, key: string): string | null => {
@@ -102,43 +111,112 @@ const safeRemoveItem = (storage: Storage, key: string): void => {
   }
 };
 
+const clearLegacyKeys = (storage: Storage, legacyKeys: readonly string[]): void => {
+  for (const legacyKey of legacyKeys) {
+    safeRemoveItem(storage, legacyKey);
+  }
+};
+
+const readCurrentOrLegacyLocalValue = (
+  key: AppStorageKey,
+  storage: Storage
+): string | null => {
+  const { current, legacy } = STORAGE_KEYS[key];
+  const currentValue = safeGetItem(storage, current);
+  if (currentValue !== null) {
+    syncCurrentValueToNative(key, currentValue);
+    return currentValue;
+  }
+
+  for (const legacyKey of legacy) {
+    const legacyValue = safeGetItem(storage, legacyKey);
+    if (legacyValue === null) {
+      continue;
+    }
+
+    safeSetItem(storage, current, legacyValue);
+    clearLegacyKeys(storage, legacy);
+    writeNativeAppStorage(key, legacyValue);
+    return legacyValue;
+  }
+
+  return null;
+};
+
+const mirrorNativeValueToLocal = (
+  storage: Storage | null,
+  key: AppStorageKey,
+  value: string
+): void => {
+  if (!storage) {
+    return;
+  }
+
+  const { current, legacy } = STORAGE_KEYS[key];
+  safeSetItem(storage, current, value);
+  clearLegacyKeys(storage, legacy);
+};
+
+const syncCurrentValueToNative = (key: AppStorageKey, value: string): void => {
+  const nativeAppStorage = getNativeAppStorage();
+  if (!nativeAppStorage) {
+    return;
+  }
+
+  try {
+    const nativeValue = nativeAppStorage.readStoredAppValue(key);
+    if (nativeValue === value) {
+      return;
+    }
+    nativeAppStorage.writeStoredAppValue(key, value);
+  } catch {
+    // ignore backfill failures
+  }
+};
+
+const writeNativeAppStorage = (key: AppStorageKey, value: string): void => {
+  const nativeAppStorage = getNativeAppStorage();
+  if (!nativeAppStorage) {
+    return;
+  }
+
+  try {
+    nativeAppStorage.writeStoredAppValue(key, value);
+  } catch {
+    // keep local mirror even if native persistence fails
+  }
+};
+
+const removeNativeAppStorage = (key: AppStorageKey): void => {
+  const nativeAppStorage = getNativeAppStorage();
+  if (!nativeAppStorage) {
+    return;
+  }
+
+  try {
+    nativeAppStorage.removeStoredAppValue(key);
+  } catch {
+    // keep local removal even if native persistence fails
+  }
+};
+
 export const getAppStorageKey = (key: AppStorageKey): string => STORAGE_KEYS[key].current;
 
 export const readAppStorage = (key: AppStorageKey): string | null => {
   const storage = getLocalStorage();
-  const { current, legacy } = STORAGE_KEYS[key];
   if (storage) {
-    const currentValue = safeGetItem(storage, current);
-    if (currentValue !== null) {
-      return currentValue;
-    }
-
-    for (const legacyKey of legacy) {
-      const legacyValue = safeGetItem(storage, legacyKey);
-      if (legacyValue === null) continue;
-      safeSetItem(storage, current, legacyValue);
-      safeRemoveItem(storage, legacyKey);
-      if (hasNativeAppStorage()) {
-        try {
-          window.axchat?.writeStoredAppValue(key, legacyValue);
-        } catch {
-          // ignore migration failures
-        }
-      }
-      return legacyValue;
+    const localValue = readCurrentOrLegacyLocalValue(key, storage);
+    if (localValue !== null) {
+      return localValue;
     }
   }
 
-  if (hasNativeAppStorage()) {
+  const nativeAppStorage = getNativeAppStorage();
+  if (nativeAppStorage) {
     try {
-      const nativeValue = window.axchat?.readStoredAppValue(key);
+      const nativeValue = nativeAppStorage.readStoredAppValue(key);
       if (nativeValue !== null && nativeValue !== undefined) {
-        if (storage) {
-          safeSetItem(storage, current, nativeValue);
-          for (const legacyKey of legacy) {
-            safeRemoveItem(storage, legacyKey);
-          }
-        }
+        mirrorNativeValueToLocal(storage, key, nativeValue);
         return nativeValue;
       }
     } catch {
@@ -151,42 +229,20 @@ export const readAppStorage = (key: AppStorageKey): string | null => {
 
 export const writeAppStorage = (key: AppStorageKey, value: string): void => {
   const storage = getLocalStorage();
-  const { current, legacy } = STORAGE_KEYS[key];
+  mirrorNativeValueToLocal(storage, key, value);
 
-  if (storage) {
-    safeSetItem(storage, current, value);
-    for (const legacyKey of legacy) {
-      safeRemoveItem(storage, legacyKey);
-    }
-  }
-
-  if (hasNativeAppStorage()) {
-    try {
-      window.axchat?.writeStoredAppValue(key, value);
-    } catch {
-      // keep local mirror even if native persistence fails
-    }
-  }
+  writeNativeAppStorage(key, value);
 };
 
 export const removeAppStorage = (key: AppStorageKey): void => {
   const storage = getLocalStorage();
   const { current, legacy } = STORAGE_KEYS[key];
-
   if (storage) {
     safeRemoveItem(storage, current);
-    for (const legacyKey of legacy) {
-      safeRemoveItem(storage, legacyKey);
-    }
+    clearLegacyKeys(storage, legacy);
   }
 
-  if (hasNativeAppStorage()) {
-    try {
-      window.axchat?.removeStoredAppValue(key);
-    } catch {
-      // keep local removal even if native persistence fails
-    }
-  }
+  removeNativeAppStorage(key);
 };
 
 export const cleanupLegacyAppStorage = (): void => {};

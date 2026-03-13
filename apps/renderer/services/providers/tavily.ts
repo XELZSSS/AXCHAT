@@ -2,7 +2,33 @@ import type OpenAI from 'openai';
 import { TavilyConfig } from '../../types';
 import { t } from '../../utils/i18n';
 import { buildProxyUrl, getProxyAuthHeadersForTarget } from './proxy';
+import * as proxyConfig from '../../../shared/proxy-config';
 import { sanitizeApiKey } from './utils';
+
+const clampTavilyMaxResults = (value: number): number => Math.min(Math.max(Math.round(value), 1), 20);
+
+const parseOptionalBooleanEnv = (value: string | undefined): boolean | undefined => {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return undefined;
+};
+
+const buildTavilyPayload = (
+  tavilyConfig: TavilyConfig,
+  args: {
+    query: string;
+    search_depth?: TavilyConfig['searchDepth'];
+    max_results?: number;
+    topic?: TavilyConfig['topic'];
+    include_answer?: boolean;
+  }
+) => ({
+  query: args.query,
+  search_depth: args.search_depth ?? tavilyConfig.searchDepth ?? 'basic',
+  max_results: clampTavilyMaxResults(args.max_results ?? tavilyConfig.maxResults ?? 5),
+  topic: args.topic ?? tavilyConfig.topic ?? 'general',
+  include_answer: args.include_answer ?? tavilyConfig.includeAnswer ?? true,
+});
 
 export const normalizeTavilyConfig = (value?: TavilyConfig): TavilyConfig | undefined => {
   if (!value) return undefined;
@@ -11,7 +37,7 @@ export const normalizeTavilyConfig = (value?: TavilyConfig): TavilyConfig | unde
   const searchDepth = value.searchDepth;
   const maxResults =
     typeof value.maxResults === 'number' && Number.isFinite(value.maxResults)
-      ? Math.min(Math.max(Math.round(value.maxResults), 1), 20)
+      ? clampTavilyMaxResults(value.maxResults)
       : undefined;
   const topic = value.topic;
   const includeAnswer = value.includeAnswer ?? undefined;
@@ -26,19 +52,13 @@ export const getDefaultTavilyConfig = (): TavilyConfig | undefined => {
   const maxResults = process.env.TAVILY_MAX_RESULTS
     ? Number.parseInt(process.env.TAVILY_MAX_RESULTS, 10)
     : undefined;
-  const includeAnswer =
-    process.env.TAVILY_INCLUDE_ANSWER === 'true'
-      ? true
-      : process.env.TAVILY_INCLUDE_ANSWER === 'false'
-        ? false
-        : undefined;
   return normalizeTavilyConfig({
     apiKey,
     projectId: process.env.TAVILY_PROJECT_ID,
     searchDepth: process.env.TAVILY_SEARCH_DEPTH as TavilyConfig['searchDepth'],
     maxResults,
     topic: process.env.TAVILY_TOPIC as TavilyConfig['topic'],
-    includeAnswer,
+    includeAnswer: parseOptionalBooleanEnv(process.env.TAVILY_INCLUDE_ANSWER),
   });
 };
 
@@ -95,15 +115,9 @@ export const callTavilySearch = async (
   if (!tavilyConfig?.apiKey) {
     throw new Error(t('settings.tavily.error.missingApiKey'));
   }
-  const payload = {
-    query: args.query,
-    search_depth: args.search_depth ?? tavilyConfig.searchDepth ?? 'basic',
-    max_results: Math.min(Math.max(args.max_results ?? tavilyConfig.maxResults ?? 5, 1), 20),
-    topic: args.topic ?? tavilyConfig.topic ?? 'general',
-    include_answer: args.include_answer ?? tavilyConfig.includeAnswer ?? true,
-  };
+  const payload = buildTavilyPayload(tavilyConfig, args);
 
-  const proxyUrl = buildProxyUrl('/proxy/tavily/search');
+  const proxyUrl = buildProxyUrl(`${proxyConfig.PROXY_ROUTES.tavily}/search`);
   const response = await fetch(proxyUrl, {
     method: 'POST',
     headers: {

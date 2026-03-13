@@ -16,6 +16,8 @@ const registerAppIpcHandlers = ({
   openUpdateDownload,
   getUpdaterState,
   setStaticProxyHttp2Enabled,
+  setAllowHttpTargets,
+  prepareForClearUserData,
 }) => {
   registerWindowIpcHandlers();
 
@@ -27,6 +29,8 @@ const registerAppIpcHandlers = ({
       openUpdateDownload,
       getUpdaterState,
       setStaticProxyHttp2Enabled,
+      setAllowHttpTargets,
+      prepareForClearUserData,
     })
   );
 

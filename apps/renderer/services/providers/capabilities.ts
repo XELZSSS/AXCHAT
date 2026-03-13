@@ -1,11 +1,6 @@
 import { ProviderId } from '../../types';
-
-export type ProviderCapabilities = {
-  supportsTavily: boolean;
-  supportsBaseUrl: boolean;
-  supportsCustomHeaders: boolean;
-  supportsRegion: boolean;
-};
+import { PROVIDER_IDS } from '../../../shared/provider-ids';
+import { PROVIDER_CONFIGS, type ProviderCapabilities } from './providerConfig';
 
 const DEFAULT_CAPABILITIES: ProviderCapabilities = {
   supportsTavily: false,
@@ -14,56 +9,22 @@ const DEFAULT_CAPABILITIES: ProviderCapabilities = {
   supportsRegion: false,
 };
 
-export const PROVIDER_CAPABILITIES: Record<ProviderId, ProviderCapabilities> = {
-  openai: {
-    supportsTavily: true,
-    supportsBaseUrl: false,
-    supportsCustomHeaders: false,
-    supportsRegion: false,
+export const PROVIDER_CAPABILITIES = PROVIDER_IDS.reduce(
+  (acc, id) => {
+    acc[id] = PROVIDER_CONFIGS[id].capabilities;
+    return acc;
   },
-  'openai-compatible': {
-    supportsTavily: true,
-    supportsBaseUrl: true,
-    supportsCustomHeaders: true,
-    supportsRegion: false,
-  },
-  xai: {
-    supportsTavily: true,
-    supportsBaseUrl: false,
-    supportsCustomHeaders: false,
-    supportsRegion: false,
-  },
-  gemini: {
-    supportsTavily: true,
-    supportsBaseUrl: false,
-    supportsCustomHeaders: false,
-    supportsRegion: false,
-  },
-  deepseek: {
-    supportsTavily: true,
-    supportsBaseUrl: false,
-    supportsCustomHeaders: false,
-    supportsRegion: false,
-  },
-  glm: {
-    supportsTavily: true,
-    supportsBaseUrl: false,
-    supportsCustomHeaders: false,
-    supportsRegion: true,
-  },
-  minimax: {
-    supportsTavily: true,
-    supportsBaseUrl: false,
-    supportsCustomHeaders: false,
-    supportsRegion: true,
-  },
-  moonshot: {
-    supportsTavily: true,
-    supportsBaseUrl: false,
-    supportsCustomHeaders: false,
-    supportsRegion: true,
-  },
+  {} as Record<ProviderId, ProviderCapabilities>
+);
+
+const assertProviderMappingCompleteness = (mapping: Record<ProviderId, unknown>, label: string) => {
+  const missing = PROVIDER_IDS.filter((id) => !(id in mapping));
+  if (missing.length > 0) {
+    throw new Error(`Provider mapping "${label}" is missing: ${missing.join(', ')}`);
+  }
 };
+
+assertProviderMappingCompleteness(PROVIDER_CAPABILITIES, 'PROVIDER_CAPABILITIES');
 
 export const getProviderCapabilities = (providerId: ProviderId): ProviderCapabilities => {
   return PROVIDER_CAPABILITIES[providerId] ?? DEFAULT_CAPABILITIES;

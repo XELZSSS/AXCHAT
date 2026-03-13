@@ -1,25 +1,20 @@
 import OpenAI from 'openai';
 import { ProviderId } from '../../types';
 import { getDefaultMoonshotBaseUrl, resolveBaseUrl } from './baseUrl';
-import { MOONSHOT_MODEL_CATALOG } from './models';
+import { PROVIDER_CONFIGS } from './providerConfig';
 import { OpenAIStandardProviderBase } from './openaiStandardProviderBase';
 import { ToolLoopOverrides } from './openaiChatHelpers';
 import { getProxyAuthHeadersForTarget } from './proxy';
 import { buildProviderModelConfig } from './modelConfig';
 import { ProviderChat, ProviderDefinition } from './types';
-import { sanitizeApiKey } from './utils';
 
 export const MOONSHOT_PROVIDER_ID: ProviderId = 'moonshot';
 
-const FALLBACK_MOONSHOT_MODEL = 'kimi-k2.5';
-const { defaultModel: DEFAULT_MOONSHOT_MODEL, models: MOONSHOT_MODELS } = buildProviderModelConfig({
-  envModel: process.env.MOONSHOT_MODEL,
-  fallbackModel: FALLBACK_MOONSHOT_MODEL,
-  catalog: MOONSHOT_MODEL_CATALOG,
-  includeFallbackModel: false,
-});
+const { defaultModel: DEFAULT_MOONSHOT_MODEL, models: MOONSHOT_MODELS } = buildProviderModelConfig(
+  PROVIDER_CONFIGS[MOONSHOT_PROVIDER_ID].modelSpec
+);
 
-const DEFAULT_MOONSHOT_API_KEY = sanitizeApiKey(process.env.MOONSHOT_API_KEY);
+const DEFAULT_MOONSHOT_API_KEY = PROVIDER_CONFIGS[MOONSHOT_PROVIDER_ID].envApiKeyResolver();
 
 class MoonshotProvider extends OpenAIStandardProviderBase implements ProviderChat {
   private baseUrl: string;
@@ -61,9 +56,7 @@ class MoonshotProvider extends OpenAIStandardProviderBase implements ProviderCha
   }
 
   setBaseUrl(baseUrl?: string): void {
-    const nextUrl = baseUrl?.trim()
-      ? resolveBaseUrl(baseUrl.trim())
-      : getDefaultMoonshotBaseUrl();
+    const nextUrl = baseUrl?.trim() ? resolveBaseUrl(baseUrl.trim()) : getDefaultMoonshotBaseUrl();
     if (nextUrl !== this.baseUrl) {
       this.baseUrl = nextUrl;
       this.client = null;

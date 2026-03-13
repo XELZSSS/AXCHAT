@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -70,6 +70,68 @@ const buildProcessEnvDefines = (
   return defines;
 };
 
+const projectRoot = __dirname;
+const rendererRoot = path.resolve(projectRoot, 'apps/renderer');
+const distRoot = path.resolve(projectRoot, 'dist');
+
+const toNormalizedId = (id: string) => id.replaceAll('\\', '/');
+
+const getManualChunkName = (id: string) => {
+  const normalizedId = toNormalizedId(id);
+
+  if (
+    normalizedId.includes('node_modules/react/') ||
+    normalizedId.includes('node_modules/react-dom/')
+  ) {
+    return 'react';
+  }
+  if (normalizedId.includes('node_modules/@google/genai/')) return 'sdk-genai';
+  if (normalizedId.includes('node_modules/openai/')) return 'sdk-openai';
+  if (normalizedId.includes('node_modules/uuid/')) return 'utils';
+
+  if (normalizedId.includes('/apps/renderer/services/providers/geminiProvider')) {
+    return 'provider-gemini';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/bedrockProvider')) {
+    return 'provider-bedrock';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/vertexAiProvider')) {
+    return 'provider-vertex-ai';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/openaiProvider')) {
+    return 'provider-openai';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/openaiCompatibleProvider')) {
+    return 'provider-openai-compatible';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/openrouterProvider')) {
+    return 'provider-openrouter';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/ollamaProvider')) {
+    return 'provider-ollama';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/xaiProvider')) {
+    return 'provider-xai';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/deepseekProvider')) {
+    return 'provider-deepseek';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/glmProvider')) {
+    return 'provider-glm';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/minimaxProvider')) {
+    return 'provider-minimax';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/moonshotProvider')) {
+    return 'provider-moonshot';
+  }
+  if (normalizedId.includes('/apps/renderer/services/providers/iflowProvider')) {
+    return 'provider-iflow';
+  }
+
+  return undefined;
+};
+
 const buildV1Proxy = (target: string, prefix: string) => ({
   target,
   changeOrigin: true,
@@ -78,10 +140,10 @@ const buildV1Proxy = (target: string, prefix: string) => ({
 });
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '');
+  const env = loadEnv(mode, projectRoot, '');
   const devServerHost = env.VITE_DEV_HOST || '127.0.0.1';
   return {
-    root: path.resolve(__dirname, 'apps/renderer'),
+    root: rendererRoot,
     base: './',
     server: {
       port: 3000,
@@ -98,7 +160,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'apps/renderer'),
+        '@': rendererRoot,
       },
     },
     build: {
@@ -106,50 +168,17 @@ export default defineConfig(({ mode }) => {
       modulePreload: {
         polyfill: false,
       },
-      outDir: path.resolve(__dirname, 'dist'),
+      outDir: distRoot,
       emptyOutDir: true,
       chunkSizeWarningLimit: 800,
-      rollupOptions: {
+      rolldownOptions: {
         output: {
-          manualChunks(id) {
-            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-              return 'react';
-            }
-            if (id.includes('node_modules/@google/genai/')) return 'sdk-genai';
-            if (id.includes('node_modules/openai/')) return 'sdk-openai';
-            if (id.includes('node_modules/uuid/')) return 'utils';
-
-            if (id.includes('/apps/renderer/services/providers/geminiProvider'))
-              return 'provider-gemini';
-            if (id.includes('/apps/renderer/services/providers/bedrockProvider'))
-              return 'provider-bedrock';
-            if (id.includes('/apps/renderer/services/providers/vertexAiProvider'))
-              return 'provider-vertex-ai';
-            if (id.includes('/apps/renderer/services/providers/openaiProvider'))
-              return 'provider-openai';
-            if (id.includes('/apps/renderer/services/providers/openaiCompatibleProvider')) {
-              return 'provider-openai-compatible';
-            }
-            if (id.includes('/apps/renderer/services/providers/openrouterProvider')) {
-              return 'provider-openrouter';
-            }
-            if (id.includes('/apps/renderer/services/providers/ollamaProvider'))
-              return 'provider-ollama';
-            if (id.includes('/apps/renderer/services/providers/xaiProvider')) return 'provider-xai';
-            if (id.includes('/apps/renderer/services/providers/deepseekProvider')) {
-              return 'provider-deepseek';
-            }
-            if (id.includes('/apps/renderer/services/providers/glmProvider')) return 'provider-glm';
-            if (id.includes('/apps/renderer/services/providers/minimaxProvider')) {
-              return 'provider-minimax';
-            }
-            if (id.includes('/apps/renderer/services/providers/moonshotProvider')) {
-              return 'provider-moonshot';
-            }
-            if (id.includes('/apps/renderer/services/providers/iflowProvider'))
-              return 'provider-iflow';
-
-            return undefined;
+          codeSplitting: {
+            groups: [
+              {
+                name: getManualChunkName,
+              },
+            ],
           },
         },
       },

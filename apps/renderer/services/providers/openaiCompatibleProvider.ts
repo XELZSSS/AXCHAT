@@ -1,25 +1,21 @@
 import { ProviderId } from '../../types';
 import { t } from '../../utils/i18n';
 import { getDefaultOpenAICompatibleBaseUrl, resolveBaseUrl } from './baseUrl';
-import { OPENAI_COMPATIBLE_MODEL_CATALOG } from './models';
+import { PROVIDER_CONFIGS } from './providerConfig';
 import { OpenAIProxyCompatibleProviderBase } from './openaiProxyCompatibleProviderBase';
 import { buildProxyUrl } from './proxy';
+import * as proxyConfig from '../../../shared/proxy-config';
 import { buildProviderModelConfig } from './modelConfig';
 import { ProviderChat, ProviderDefinition } from './types';
-import { sanitizeApiKey } from './utils';
 
 export const OPENAI_COMPATIBLE_PROVIDER_ID: ProviderId = 'openai-compatible';
-const OPENAI_COMPATIBLE_PROXY_BASE_URL = buildProxyUrl('/proxy/openai-compatible/v1');
+const OPENAI_COMPATIBLE_PROXY_BASE_URL = buildProxyUrl(proxyConfig.PROXY_ROUTES.openaiCompatibleV1);
 
-const FALLBACK_OPENAI_COMPATIBLE_MODEL = 'gpt-4.1-mini';
 const { defaultModel: DEFAULT_OPENAI_COMPATIBLE_MODEL, models: OPENAI_COMPATIBLE_MODELS } =
-  buildProviderModelConfig({
-    envModel: process.env.OPENAI_COMPATIBLE_MODEL,
-    fallbackModel: FALLBACK_OPENAI_COMPATIBLE_MODEL,
-    catalog: OPENAI_COMPATIBLE_MODEL_CATALOG,
-  });
+  buildProviderModelConfig(PROVIDER_CONFIGS[OPENAI_COMPATIBLE_PROVIDER_ID].modelSpec);
 
-const DEFAULT_OPENAI_COMPATIBLE_API_KEY = sanitizeApiKey(process.env.OPENAI_COMPATIBLE_API_KEY);
+const DEFAULT_OPENAI_COMPATIBLE_API_KEY =
+  PROVIDER_CONFIGS[OPENAI_COMPATIBLE_PROVIDER_ID].envApiKeyResolver();
 
 class OpenAICompatibleProvider extends OpenAIProxyCompatibleProviderBase implements ProviderChat {
   constructor() {

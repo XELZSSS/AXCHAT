@@ -10,7 +10,15 @@ const {
   writeAppStorageValue,
   removeAppStorageValue,
 } = require('../storage/appStorage.cjs');
-const { getSecretStorageInfo } = require('../storage/secrets.cjs');
+
+const clearAppCache = async () => {
+  const session = require('electron').session;
+  await session.defaultSession.clearCache();
+  await session.defaultSession.clearStorageData({
+    storages: ['cachestorage', 'indexdb', 'serviceworkers'],
+  });
+  return { ok: true };
+};
 
 const execFileAsync = promisify(execFile);
 
@@ -48,6 +56,8 @@ const buildSystemHandlers = ({
   openUpdateDownload,
   getUpdaterState,
   setStaticProxyHttp2Enabled,
+  setAllowHttpTargets,
+  prepareForClearUserData,
 }) => ({
   'storage:app:read': async (_event, key) => {
     return readAppStorageValue(key);
@@ -58,9 +68,6 @@ const buildSystemHandlers = ({
   },
   'storage:app:remove': async (_event, key) => {
     removeAppStorageValue(key);
-  },
-  'storage:secrets:get-info': async () => {
-    return getSecretStorageInfo();
   },
   'tray:set-language': (_event, language) => {
     setTrayLanguage(language);
@@ -91,6 +98,15 @@ const buildSystemHandlers = ({
   },
   'proxy:set-static-http2': (_event, enabled) => {
     return setStaticProxyHttp2Enabled(enabled);
+  },
+  'proxy:set-allow-http-targets': (_event, enabled) => {
+    return setAllowHttpTargets(enabled);
+  },
+  'app:clear-cache': async () => {
+    if (typeof prepareForClearUserData === 'function') {
+      await prepareForClearUserData();
+    }
+    return clearAppCache();
   },
   'models:sync-official-preview': async (_event, providerId) => {
     const normalizedProviderId = String(providerId ?? '').trim();

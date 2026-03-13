@@ -2,21 +2,17 @@ import OpenAI from 'openai';
 import { ProviderId } from '../../types';
 import { OpenAIStandardProviderBase } from './openaiStandardProviderBase';
 import { PreflightMessage, ToolLoopOverrides } from './openaiChatHelpers';
-import { XAI_MODEL_CATALOG } from './models';
+import { PROVIDER_CONFIGS } from './providerConfig';
 import { buildProviderModelConfig } from './modelConfig';
 import { ProviderChat, ProviderDefinition } from './types';
-import { sanitizeApiKey } from './utils';
 
 export const XAI_PROVIDER_ID: ProviderId = 'xai';
 const XAI_BASE_URL = process.env.XAI_BASE_URL ?? 'https://api.x.ai/v1';
-const FALLBACK_XAI_MODEL = 'grok-4-1-fast-reasoning';
-const { defaultModel: DEFAULT_XAI_MODEL, models: XAI_MODELS } = buildProviderModelConfig({
-  envModel: process.env.XAI_MODEL,
-  fallbackModel: FALLBACK_XAI_MODEL,
-  catalog: XAI_MODEL_CATALOG,
-});
+const { defaultModel: DEFAULT_XAI_MODEL, models: XAI_MODELS } = buildProviderModelConfig(
+  PROVIDER_CONFIGS[XAI_PROVIDER_ID].modelSpec
+);
 
-const DEFAULT_XAI_API_KEY = sanitizeApiKey(process.env.XAI_API_KEY);
+const DEFAULT_XAI_API_KEY = PROVIDER_CONFIGS[XAI_PROVIDER_ID].envApiKeyResolver();
 
 const supportsReasoningSummary = (modelName: string): boolean => {
   const lower = modelName.toLowerCase();

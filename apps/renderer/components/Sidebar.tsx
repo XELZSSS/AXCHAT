@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import { memo, useCallback, useRef } from 'react';
+import type { FormEvent, KeyboardEvent, MouseEvent } from 'react';
 import { ChatSession } from '../types';
 import { Language, t } from '../utils/i18n';
 import { Theme } from '../utils/theme';
@@ -17,6 +18,13 @@ import {
   SettingsOutlinedIcon,
 } from './icons';
 
+const SIDEBAR_FOOTER_BUTTON_CLASS =
+  'flex items-center gap-3 text-sm w-full justify-start !bg-transparent hover:!bg-[var(--bg-2)] text-[var(--ink-1)]';
+const SESSION_ACTION_BUTTON_CLASS =
+  '!h-7 !w-7 !ring-0 !bg-transparent hover:!bg-[var(--bg-2)]';
+const SESSION_EDIT_ACTION_BUTTON_CLASS =
+  '!h-6 !w-6 !ring-0 !bg-transparent hover:!bg-[var(--bg-2)]';
+
 type SidebarProps = {
   currentSessionId: string;
   sessions: ChatSession[];
@@ -29,19 +37,19 @@ type SidebarProps = {
   onNewChatClick: () => void;
   onSearchChange: (value: string) => void;
   onLoadSession: (session: ChatSession) => void;
-  onStartEdit: (e: React.MouseEvent, session: ChatSession) => void;
-  onDeleteSession: (e: React.MouseEvent, sessionId: string) => void;
+  onStartEdit: (e: MouseEvent, session: ChatSession) => void;
+  onDeleteSession: (e: MouseEvent, sessionId: string) => void;
   onEditTitleInputChange: (value: string) => void;
-  onEditInputClick: (e: React.MouseEvent) => void;
-  onEditKeyDown: (e: React.KeyboardEvent) => void;
-  onSaveEdit: (e: React.FormEvent | React.MouseEvent) => void;
-  onCancelEdit: (e: React.MouseEvent) => void;
+  onEditInputClick: (e: MouseEvent) => void;
+  onEditKeyDown: (e: KeyboardEvent) => void;
+  onSaveEdit: (e: FormEvent | MouseEvent) => void;
+  onCancelEdit: (e: MouseEvent) => void;
   onThemeToggle: () => void;
   onLanguageChange: (nextLanguage: Language) => void;
   onOpenSettings: () => void;
 };
 
-const SidebarComponent: React.FC<SidebarProps> = ({
+const SidebarComponent = ({
   currentSessionId,
   sessions,
   filteredSessions,
@@ -63,11 +71,11 @@ const SidebarComponent: React.FC<SidebarProps> = ({
   onThemeToggle,
   onLanguageChange,
   onOpenSettings,
-}) => {
+}: SidebarProps) => {
   const listContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSessionItemKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>, session: ChatSession) => {
+    (event: KeyboardEvent<HTMLDivElement>, session: ChatSession) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();
       onLoadSession(session);
@@ -77,18 +85,14 @@ const SidebarComponent: React.FC<SidebarProps> = ({
 
   const isEnglish = language === 'en';
   const isDarkTheme = theme === 'dark';
-  const languageLabel = useMemo(
-    () => (isEnglish ? t('language.en') : t('language.zhCN')),
-    [isEnglish]
-  );
-  const themeLabel = useMemo(
-    () => (isDarkTheme ? t('theme.dark') : t('theme.light')),
-    [isDarkTheme]
-  );
+  const languageLabel = isEnglish ? t('language.en') : t('language.zhCN');
+  const themeLabel = isDarkTheme ? t('theme.dark') : t('theme.light');
 
   const handleLanguageToggle = useCallback(() => {
     onLanguageChange(isEnglish ? 'zh-CN' : 'en');
   }, [isEnglish, onLanguageChange]);
+  const hasNoSessions = sessions.length === 0;
+  const hasNoMatchingSessions = !hasNoSessions && filteredSessions.length === 0;
 
   return (
     <aside className="sidebar relative z-30 w-72 h-full bg-[var(--bg-1)] border-r border-[var(--line-1)]">
@@ -97,7 +101,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
           onClick={onNewChatClick}
           variant="primary"
           size="md"
-          className="w-full flex items-center justify-center gap-2 !py-2 mb-4"
+          className="w-full flex items-center justify-center gap-2 !py-2 mb-4 text-[var(--text-on-brand-strong)]"
         >
           <AddIcon sx={{ fontSize: 16 }} />
           <span>{t('sidebar.newChat')}</span>
@@ -106,7 +110,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
         <div className="mb-3">
           <div className="relative group">
             <SearchIcon
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-3)] group-focus-within:text-[var(--ink-2)]"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-3)] group-focus-within:text-[var(--action-interactive)]"
               sx={{ fontSize: 14 }}
             />
             <Input
@@ -124,11 +128,11 @@ const SidebarComponent: React.FC<SidebarProps> = ({
             {t('sidebar.history')}
           </div>
 
-          {sessions.length === 0 ? (
+          {hasNoSessions ? (
             <div className="px-2 py-2 text-sm text-[var(--ink-3)]">
               {t('sidebar.noConversations')}
             </div>
-          ) : filteredSessions.length === 0 ? (
+          ) : hasNoMatchingSessions ? (
             <div className="px-2 py-2 text-sm text-[var(--ink-3)]">{t('sidebar.noMatching')}</div>
           ) : (
             <div className="space-y-0.5">
@@ -145,9 +149,9 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                           ? 'page'
                           : undefined
                       }
-                      className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors duration-160 ease-out text-sm ${
+                      className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors duration-160 ease-out text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)] ${
                         currentSessionId === session.id && editingSessionId !== session.id
-                          ? 'bg-[var(--bg-2)] text-[var(--ink-1)]'
+                          ? 'bg-[var(--bg-2)] text-[var(--ink-1)] ring-1 ring-[var(--action-interactive)]'
                           : 'text-[var(--ink-2)] hover:bg-[var(--bg-2)] hover:text-[var(--ink-1)]'
                       }`}
                     >
@@ -164,7 +168,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                           />
                           <IconButton
                             onClick={onSaveEdit}
-                            className="!h-6 !w-6 !ring-0 !bg-transparent hover:!bg-[var(--bg-2)]"
+                            className={SESSION_EDIT_ACTION_BUTTON_CLASS}
                             aria-label={t('settings.modal.save')}
                             title={t('settings.modal.save')}
                           >
@@ -173,7 +177,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                           <IconButton
                             onClick={onCancelEdit}
                             danger
-                            className="!h-6 !w-6 !ring-0 !bg-transparent hover:!bg-[var(--bg-2)]"
+                            className={SESSION_EDIT_ACTION_BUTTON_CLASS}
                             aria-label={t('settings.modal.cancel')}
                             title={t('settings.modal.cancel')}
                           >
@@ -192,7 +196,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
                             <IconButton
                               onClick={(e) => onStartEdit(e, session)}
-                              className="!h-7 !w-7 !ring-0 !bg-transparent hover:!bg-[var(--bg-2)]"
+                              className={SESSION_ACTION_BUTTON_CLASS}
                               aria-label={t('sidebar.editTitle')}
                               title={t('sidebar.editTitle')}
                             >
@@ -201,7 +205,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
                             <IconButton
                               onClick={(e) => onDeleteSession(e, session.id)}
                               danger
-                              className="!h-7 !w-7 !ring-0 !bg-transparent hover:!bg-[var(--bg-2)]"
+                              className={SESSION_ACTION_BUTTON_CLASS}
                               aria-label={t('sidebar.deleteTitle')}
                               title={t('sidebar.deleteTitle')}
                             >
@@ -223,7 +227,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
             onClick={handleLanguageToggle}
             variant="ghost"
             size="md"
-            className="flex items-center gap-3 text-sm w-full justify-start !bg-transparent hover:!bg-[var(--bg-2)]"
+            className={SIDEBAR_FOOTER_BUTTON_CLASS}
           >
             <LanguageIcon sx={{ fontSize: 16 }} />
             <span>{languageLabel}</span>
@@ -232,7 +236,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
             onClick={onThemeToggle}
             variant="ghost"
             size="md"
-            className="flex items-center gap-3 text-sm w-full justify-start !bg-transparent hover:!bg-[var(--bg-2)]"
+            className={SIDEBAR_FOOTER_BUTTON_CLASS}
             aria-label={t('sidebar.toggleTheme')}
             title={t('sidebar.toggleTheme')}
           >
@@ -247,7 +251,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({
             onClick={onOpenSettings}
             variant="ghost"
             size="md"
-            className="flex items-center gap-3 text-sm w-full justify-start !bg-transparent hover:!bg-[var(--bg-2)]"
+            className={SIDEBAR_FOOTER_BUTTON_CLASS}
           >
             <SettingsOutlinedIcon sx={{ fontSize: 16 }} />
             <span>{t('sidebar.settings')}</span>
@@ -258,5 +262,5 @@ const SidebarComponent: React.FC<SidebarProps> = ({
   );
 };
 
-const Sidebar = React.memo(SidebarComponent);
+const Sidebar = memo(SidebarComponent);
 export default Sidebar;

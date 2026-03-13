@@ -1,10 +1,6 @@
-import { ProviderId, TavilyConfig } from '../../types';
+import { GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '../../types';
 
-export type ActiveSettingsTab =
-  | 'provider'
-  | 'search'
-  | 'version'
-  | 'shortcuts';
+export type ActiveSettingsTab = 'provider' | 'search' | 'version' | 'shortcuts';
 
 export type SettingsModalState = {
   providerId: ProviderId;
@@ -13,9 +9,11 @@ export type SettingsModalState = {
   baseUrl?: string;
   customHeaders: Array<{ key: string; value: string }>;
   tavily: TavilyConfig;
+  embedding: GeminiEmbeddingConfig;
   showApiKey: boolean;
   showTavilyKey: boolean;
   staticProxyHttp2Enabled: boolean;
+  allowHttpTargets: boolean;
   toolCallMaxRounds: string;
   activeTab: ActiveSettingsTab;
 };
@@ -26,6 +24,13 @@ export type SettingsModalAction =
   | {
       type: 'set_tavily';
       payload: { key: keyof TavilyConfig; value: TavilyConfig[keyof TavilyConfig] };
+    }
+  | {
+      type: 'set_embedding';
+      payload: {
+        key: keyof GeminiEmbeddingConfig;
+        value: GeminiEmbeddingConfig[keyof GeminiEmbeddingConfig];
+      };
     }
   | { type: 'add_custom_header' }
   | { type: 'remove_custom_header'; payload: { index: number } }
@@ -46,6 +51,14 @@ export const settingsModalReducer = (
         ...state,
         tavily: {
           ...state.tavily,
+          [action.payload.key]: action.payload.value,
+        },
+      };
+    case 'set_embedding':
+      return {
+        ...state,
+        embedding: {
+          ...state.embedding,
           [action.payload.key]: action.payload.value,
         },
       };

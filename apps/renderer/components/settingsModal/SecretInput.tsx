@@ -1,13 +1,15 @@
-import React from 'react';
+import type { ChangeEvent } from 'react';
 import { t } from '../../utils/i18n';
 import { Button, Input } from '../ui';
 import { DeleteOutlineIcon, VisibilityIcon, VisibilityOffIcon } from '../icons';
+
+const ICON_BUTTON_CLASS = '!h-6 !w-6 !min-w-0 !p-0 flex items-center justify-center';
 
 type SecretInputProps = {
   label: string;
   labelClassName?: string;
   value: string;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   showSecret: boolean;
   onToggleVisibility: () => void;
   onClear: () => void;
@@ -18,7 +20,7 @@ type SecretInputProps = {
   autoComplete?: string;
 };
 
-const SecretInput: React.FC<SecretInputProps> = ({
+const SecretInput = ({
   label,
   labelClassName,
   value,
@@ -31,8 +33,13 @@ const SecretInput: React.FC<SecretInputProps> = ({
   inputClassName,
   compact,
   autoComplete = 'off',
-}) => {
+}: SecretInputProps) => {
   const resolvedClearLabel = clearLabel ?? t('settings.apiKey.clear');
+  const visibilityIcon = showSecret ? (
+    <VisibilityOffIcon sx={{ fontSize: 16 }} />
+  ) : (
+    <VisibilityIcon sx={{ fontSize: 16 }} />
+  );
 
   return (
     <div className="space-y-2">
@@ -51,20 +58,16 @@ const SecretInput: React.FC<SecretInputProps> = ({
             onClick={onToggleVisibility}
             variant="ghost"
             size="sm"
-            className="!h-6 !w-6 !min-w-0 !p-0 flex items-center justify-center"
+            className={ICON_BUTTON_CLASS}
             aria-label={visibilityLabel}
           >
-            {showSecret ? (
-              <VisibilityOffIcon sx={{ fontSize: 16 }} />
-            ) : (
-              <VisibilityIcon sx={{ fontSize: 16 }} />
-            )}
+            {visibilityIcon}
           </Button>
           <Button
             onClick={onClear}
             variant="ghost"
             size="sm"
-            className="!h-6 !w-6 !min-w-0 !p-0 flex items-center justify-center hover:text-red-400"
+            className={`${ICON_BUTTON_CLASS} hover:text-[var(--status-error)]`}
             aria-label={resolvedClearLabel}
             title={resolvedClearLabel}
           >

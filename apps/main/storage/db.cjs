@@ -62,15 +62,6 @@ const applySchema = (db) => {
       updated_at INTEGER NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS provider_settings (
-      provider_id TEXT PRIMARY KEY,
-      model_name TEXT NOT NULL,
-      base_url TEXT,
-      custom_headers_json TEXT,
-      tavily_json TEXT,
-      updated_at INTEGER NOT NULL
-    );
-
     CREATE INDEX IF NOT EXISTS idx_sessions_updated_at
       ON sessions(updated_at DESC);
 

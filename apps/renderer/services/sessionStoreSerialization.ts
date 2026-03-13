@@ -1,10 +1,26 @@
 import type { ChatSession } from '../types';
 import { formatMessageTime } from '../utils/time';
 import { PROVIDER_IDS as RAW_PROVIDER_IDS } from '../../shared/provider-ids';
+import { getProviderDefinition } from './providers/registry';
 
-const DEFAULT_PROVIDER_ID = 'gemini' as const;
-const DEFAULT_MODEL_NAME = 'gemini-3.1-pro-preview';
+const DEFAULT_PROVIDER_ID = (RAW_PROVIDER_IDS[0] ?? 'gemini') as (typeof RAW_PROVIDER_IDS)[number];
+const DEFAULT_MODEL_NAME = getProviderDefinition(DEFAULT_PROVIDER_ID).defaultModel;
 const VALID_PROVIDER_IDS = new Set(RAW_PROVIDER_IDS as unknown as string[]);
+
+const warnIfDefaultModelMismatch = (): void => {
+  if (typeof __APP_ENV__ !== 'undefined' && __APP_ENV__ === 'production') return;
+  const normalizedModel = DEFAULT_MODEL_NAME.toLowerCase();
+  const isGeminiModel = normalizedModel.startsWith('gemini');
+  if (DEFAULT_PROVIDER_ID === 'gemini' && !isGeminiModel) {
+    console.warn('[session-store] DEFAULT_MODEL_NAME does not match gemini provider.');
+    return;
+  }
+  if (DEFAULT_PROVIDER_ID !== 'gemini' && isGeminiModel) {
+    console.warn('[session-store] DEFAULT_MODEL_NAME looks gemini but default provider is not.');
+  }
+};
+
+warnIfDefaultModelMismatch();
 
 export type StoredSession = Partial<ChatSession> &
   Pick<ChatSession, 'id' | 'title' | 'createdAt' | 'updatedAt'>;

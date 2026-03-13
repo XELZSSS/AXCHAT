@@ -1,22 +1,18 @@
 import OpenAI from 'openai';
 import { ProviderId } from '../../types';
-import { DEEPSEEK_MODEL_CATALOG } from './models';
+import { PROVIDER_CONFIGS } from './providerConfig';
 import { PreflightMessage, ToolLoopOverrides } from './openaiChatHelpers';
 import { OpenAIStandardProviderBase } from './openaiStandardProviderBase';
 import { buildProviderModelConfig } from './modelConfig';
 import { ProviderChat, ProviderDefinition } from './types';
-import { sanitizeApiKey } from './utils';
 
 export const DEEPSEEK_PROVIDER_ID: ProviderId = 'deepseek';
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL ?? 'https://api.deepseek.com';
-const FALLBACK_DEEPSEEK_MODEL = 'deepseek-reasoner';
-const { defaultModel: DEFAULT_DEEPSEEK_MODEL, models: DEEPSEEK_MODELS } = buildProviderModelConfig({
-  envModel: process.env.DEEPSEEK_MODEL,
-  fallbackModel: FALLBACK_DEEPSEEK_MODEL,
-  catalog: DEEPSEEK_MODEL_CATALOG,
-});
+const { defaultModel: DEFAULT_DEEPSEEK_MODEL, models: DEEPSEEK_MODELS } = buildProviderModelConfig(
+  PROVIDER_CONFIGS[DEEPSEEK_PROVIDER_ID].modelSpec
+);
 
-const DEFAULT_DEEPSEEK_API_KEY = sanitizeApiKey(process.env.DEEPSEEK_API_KEY);
+const DEFAULT_DEEPSEEK_API_KEY = PROVIDER_CONFIGS[DEEPSEEK_PROVIDER_ID].envApiKeyResolver();
 
 class DeepSeekProvider extends OpenAIStandardProviderBase implements ProviderChat {
   constructor() {

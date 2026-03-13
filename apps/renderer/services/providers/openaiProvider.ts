@@ -5,7 +5,7 @@ import { t } from '../../utils/i18n';
 import { OpenAIStyleProviderBase } from './openaiBase';
 import { ProviderChat, ProviderDefinition } from './types';
 import { buildSystemInstruction } from './prompts';
-import { OPENAI_MODEL_CATALOG } from './models';
+import { PROVIDER_CONFIGS } from './providerConfig';
 import { callTavilySearch, getDefaultTavilyConfig, normalizeTavilyConfig } from './tavily';
 import {
   ResponseFunctionCallItem,
@@ -19,14 +19,11 @@ import { buildProviderModelConfig } from './modelConfig';
 import { getMaxToolCallRounds, sanitizeApiKey } from './utils';
 
 export const OPENAI_PROVIDER_ID: ProviderId = 'openai';
-const FALLBACK_OPENAI_MODEL = 'gpt-5.4';
-const { defaultModel: DEFAULT_OPENAI_MODEL, models: OPENAI_MODELS } = buildProviderModelConfig({
-  envModel: process.env.OPENAI_MODEL,
-  fallbackModel: FALLBACK_OPENAI_MODEL,
-  catalog: OPENAI_MODEL_CATALOG,
-});
+const { defaultModel: DEFAULT_OPENAI_MODEL, models: OPENAI_MODELS } = buildProviderModelConfig(
+  PROVIDER_CONFIGS[OPENAI_PROVIDER_ID].modelSpec
+);
 
-const DEFAULT_OPENAI_API_KEY = sanitizeApiKey(process.env.OPENAI_API_KEY);
+const DEFAULT_OPENAI_API_KEY = PROVIDER_CONFIGS[OPENAI_PROVIDER_ID].envApiKeyResolver();
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL;
 
 const supportsReasoningSummary = (modelName: string): boolean => {
@@ -47,7 +44,7 @@ class OpenAIProvider extends OpenAIStyleProviderBase implements ProviderChat {
   constructor() {
     super();
     this.apiKey = DEFAULT_OPENAI_API_KEY;
-    this.modelName = openaiProviderDefinition.defaultModel;
+    this.modelName = DEFAULT_OPENAI_MODEL;
     this.tavilyConfig = getDefaultTavilyConfig();
   }
 

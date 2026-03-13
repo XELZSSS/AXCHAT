@@ -106,6 +106,38 @@ type RunToolLoopResult = {
   hadToolCalls: boolean;
 };
 
+const buildPreflightCompletionRequest = (
+  model: string,
+  messages: OpenAIChatMessages,
+  tools: OpenAI.Chat.Completions.ChatCompletionTool[],
+  extraBody?: Record<string, unknown>
+): OpenAIChatCreateNonStreaming =>
+  ({
+    model,
+    messages,
+    tools,
+    tool_choice: 'auto',
+    stream: false,
+    ...(extraBody ? { extra_body: extraBody } : {}),
+  }) as OpenAIChatCreateNonStreaming;
+
+const appendAssistantAndToolMessages = (
+  messages: OpenAIChatMessages,
+  preflightMessage: PreflightMessage | null,
+  toolCalls: ToolCall[],
+  toolMessages: ToolMessage[],
+  extras: Record<string, unknown>
+): OpenAIChatMessages => [
+  ...messages,
+  {
+    role: 'assistant' as const,
+    content: preflightMessage?.content ?? null,
+    tool_calls: toolCalls,
+    ...extras,
+  } as LegacyLoopMessage,
+  ...toolMessages,
+];
+
 const createChatCompletion = async (
   client: OpenAI,
   params: OpenAIChatCreateNonStreaming | OpenAIChatCreateStreaming,
@@ -146,14 +178,7 @@ export const runToolCallLoop = async ({
   for (let round = 0; round < maxRounds; round += 1) {
     const initialResponse = (await createChatCompletion(
       client,
-      {
-        model,
-        messages: workingMessages,
-        tools,
-        tool_choice: 'auto',
-        stream: false,
-        ...(extraBody ? { extra_body: extraBody } : {}),
-      } as OpenAIChatCreateNonStreaming,
+      buildPreflightCompletionRequest(model, workingMessages, tools, extraBody),
       signal
     )) as OpenAI.Chat.Completions.ChatCompletion;
 
@@ -167,16 +192,13 @@ export const runToolCallLoop = async ({
     hadToolCalls = true;
     const toolMessages = await buildToolMessages(toolCalls, tavilyConfig, requestPolicy);
     const extras = getAssistantMessageExtras?.(preflightMessage) ?? {};
-    workingMessages = [
-      ...workingMessages,
-      {
-        role: 'assistant' as const,
-        content: preflightMessage?.content ?? null,
-        tool_calls: toolCalls,
-        ...extras,
-      } as LegacyLoopMessage,
-      ...toolMessages,
-    ];
+    workingMessages = appendAssistantAndToolMessages(
+      workingMessages,
+      preflightMessage,
+      toolCalls,
+      toolMessages,
+      extras
+    );
   }
 
   return { messages: workingMessages, preflightMessage, hadToolCalls };

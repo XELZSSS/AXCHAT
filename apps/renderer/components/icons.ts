@@ -11,6 +11,7 @@ export { default as LightModeOutlinedIcon } from '@mui/icons-material/LightModeO
 export { default as PublicIcon } from '@mui/icons-material/Public';
 export { default as SaveOutlinedIcon } from '@mui/icons-material/SaveOutlined';
 export { default as SearchIcon } from '@mui/icons-material/Search';
+export { default as WarningAmberOutlinedIcon } from '@mui/icons-material/WarningAmberOutlined';
 export { default as SendRoundedIcon } from '@mui/icons-material/SendRounded';
 export { default as SettingsOutlinedIcon } from '@mui/icons-material/SettingsOutlined';
 export { default as SmartToyOutlinedIcon } from '@mui/icons-material/SmartToyOutlined';

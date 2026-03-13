@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { t } from '../utils/i18n';
 import { readAppStorage, removeAppStorage, writeAppStorage } from '../services/storageKeys';
 import { PublicIcon, SendRoundedIcon, StopCircleOutlinedIcon } from './icons';
@@ -14,7 +15,7 @@ interface ChatInputProps {
   onToggleSearch: () => void;
 }
 
-const ChatInputComponent: React.FC<ChatInputProps> = ({
+const ChatInputComponent = ({
   onSend,
   disabled,
   isStreaming,
@@ -23,13 +24,14 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
   searchEnabled,
   searchAvailable,
   onToggleSearch,
-}) => {
-  const [input, setInput] = useState('');
+}: ChatInputProps) => {
+  const [input, setInput] = useState(() => readAppStorage('inputDraft') ?? '');
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const draftSaveTimerRef = useRef<number | null>(null);
   const lastHeightRef = useRef<number | null>(null);
   const isInputDisabled = disabled && !isStreaming;
+  const hasInput = input.trim().length > 0;
 
   const clearDraftTimer = useCallback(() => {
     if (draftSaveTimerRef.current !== null) {
@@ -38,16 +40,29 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
     }
   }, []);
 
-  useEffect(() => {
-    const savedDraft = readAppStorage('inputDraft');
-    if (savedDraft) {
-      setInput(savedDraft);
-    }
-  }, []);
+  const persistDraft = useCallback(
+    (value: string) => {
+      clearDraftTimer();
+      draftSaveTimerRef.current = window.setTimeout(() => {
+        writeAppStorage('inputDraft', value);
+        clearDraftTimer();
+      }, 350);
+    },
+    [clearDraftTimer]
+  );
+
+  const clearDraft = useCallback(() => {
+    clearDraftTimer();
+    removeAppStorage('inputDraft');
+  }, [clearDraftTimer]);
+
+  const stopStreaming = useCallback(() => {
+    onStop();
+  }, [onStop]);
 
   useEffect(() => {
     return () => clearDraftTimer();
-  }, []);
+  }, [clearDraftTimer]);
 
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
@@ -83,38 +98,33 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
   }, [updateChatInputHeight]);
 
   const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    (e: ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       setInput(newValue);
-      clearDraftTimer();
-      draftSaveTimerRef.current = window.setTimeout(() => {
-        writeAppStorage('inputDraft', newValue);
-        clearDraftTimer();
-      }, 350);
+      persistDraft(newValue);
     },
-    [clearDraftTimer]
+    [persistDraft]
   );
 
   const handleSubmit = useCallback(
-    (e?: React.FormEvent) => {
+    (e?: FormEvent) => {
       e?.preventDefault();
-      if (!input.trim() || isInputDisabled) return;
+      if (!hasInput || isInputDisabled) return;
 
       if (isStreaming) {
-        onStop();
+        stopStreaming();
         return;
       }
 
       onSend(input);
       setInput('');
-      clearDraftTimer();
-      removeAppStorage('inputDraft');
+      clearDraft();
     },
-    [clearDraftTimer, input, isInputDisabled, isStreaming, onSend, onStop]
+    [clearDraft, hasInput, input, isInputDisabled, isStreaming, onSend, stopStreaming]
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSubmit();
@@ -134,11 +144,11 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
 
   const handleSendClick = useCallback(() => {
     if (isStreaming) {
-      onStop();
+      stopStreaming();
       return;
     }
     handleSubmit();
-  }, [handleSubmit, isStreaming, onStop]);
+  }, [handleSubmit, isStreaming, stopStreaming]);
 
   return (
     <div
@@ -163,8 +173,10 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
             aria-pressed={searchEnabled}
             aria-label={searchToggleLabel}
             title={searchToggleLabel}
-            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-160 ease-out ${
-              searchEnabled ? 'text-[#3b82f6]' : 'text-[var(--ink-3)] hover:text-[#3b82f6]'
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-160 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)] ${
+              searchEnabled
+                ? 'text-[var(--action-interactive)]'
+                : 'text-[var(--ink-3)] hover:text-[var(--action-interactive)]'
             } ${searchAvailable && !isInputDisabled ? '' : 'opacity-50 cursor-not-allowed'}`}
           >
             <PublicIcon sx={{ fontSize: 18 }} />
@@ -172,15 +184,15 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
           <button
             type="button"
             onClick={handleSendClick}
-            disabled={(!input.trim() && !isStreaming) || isInputDisabled}
+            disabled={(!hasInput && !isStreaming) || isInputDisabled}
             aria-label={sendActionLabel}
             title={sendActionLabel}
-            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-160 ease-out ${
-              input.trim() || isStreaming
-                ? 'text-[#3b82f6] hover:text-[#2563eb]'
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-160 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)] ${
+              hasInput || isStreaming
+                ? 'text-[var(--action-interactive)] hover:text-[var(--action-interactive)]'
                 : 'text-[var(--ink-3)]'
             } ${
-              (!input.trim() && !isStreaming) || isInputDisabled
+              (!hasInput && !isStreaming) || isInputDisabled
                 ? 'opacity-50 cursor-not-allowed'
                 : ''
             }`}
@@ -197,5 +209,5 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
   );
 };
 
-const ChatInput = React.memo(ChatInputComponent);
+const ChatInput = memo(ChatInputComponent);
 export default ChatInput;

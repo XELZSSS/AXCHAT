@@ -1,4 +1,5 @@
-import { RefObject, useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useState } from 'react';
+import type { RefObject } from 'react';
 
 type DropdownPosition = {
   top: number;
@@ -16,6 +17,10 @@ type UseDropdownPositionOptions = {
   onRequestClose: () => void;
 };
 
+type ScheduledPositionUpdater = (() => void) & {
+  cancel: () => void;
+};
+
 export const useDropdownPosition = ({
   open,
   containerRef,
@@ -26,6 +31,7 @@ export const useDropdownPosition = ({
   const [position, setPosition] = useState<DropdownPosition | null>(null);
   const [menuHeight, setMenuHeight] = useState<number | null>(null);
   const [menuReady, setMenuReady] = useState(false);
+  const requestClose = useEffectEvent(onRequestClose);
 
   const updatePosition = useCallback(() => {
     const trigger = triggerRef.current;
@@ -56,6 +62,29 @@ export const useDropdownPosition = ({
     });
   }, [menuHeight, triggerRef]);
 
+  const createScheduledPositionUpdater = useCallback((): ScheduledPositionUpdater => {
+    let frameId = 0;
+
+    const run = () => {
+      frameId = 0;
+      updatePosition();
+    };
+
+    const schedule = () => {
+      if (frameId !== 0) return;
+      frameId = window.requestAnimationFrame(run);
+    };
+
+    schedule.cancel = () => {
+      if (frameId === 0) return;
+      window.cancelAnimationFrame(frameId);
+      frameId = 0;
+    };
+
+    return schedule as ScheduledPositionUpdater;
+  }, [updatePosition]);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!open) {
       setMenuHeight(null);
@@ -63,32 +92,38 @@ export const useDropdownPosition = ({
       return;
     }
 
+    const requestPositionUpdate = createScheduledPositionUpdater();
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       if (triggerRef.current?.contains(target)) return;
       if (menuRef.current?.contains(target)) return;
       if (containerRef.current?.contains(target)) return;
-      onRequestClose();
+      requestClose();
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onRequestClose();
+      if (event.key === 'Escape') requestClose();
     };
 
-    updatePosition();
+    requestPositionUpdate();
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', requestPositionUpdate);
+    window.addEventListener('scroll', requestPositionUpdate, { capture: true, passive: true });
 
     return () => {
+      requestPositionUpdate.cancel();
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', requestPositionUpdate);
+      window.removeEventListener('scroll', requestPositionUpdate, true);
     };
-  }, [containerRef, menuRef, onRequestClose, open, triggerRef, updatePosition]);
+  }, [containerRef, createScheduledPositionUpdater, menuRef, open, triggerRef]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
+  // Menu height and readiness come from committed DOM layout, so this stays in a layout effect.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useLayoutEffect(() => {
     if (!open) return;
     const rawHeight = menuRef.current?.getBoundingClientRect().height ?? null;
@@ -103,6 +138,7 @@ export const useDropdownPosition = ({
       setMenuReady(true);
     }
   }, [menuHeight, menuReady, menuRef, open, updatePosition]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return {
     position,

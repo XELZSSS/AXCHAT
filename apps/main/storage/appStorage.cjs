@@ -1,9 +1,6 @@
 const { ensureDatabase } = require('./db.cjs');
-const {
-  clearProviderSettingsValue,
-  readProviderSettingsValue,
-  writeProviderSettingsValue,
-} = require('./providerSettingsRepository.cjs');
+
+const normalizeStorageKey = (key) => String(key);
 
 const decodeStoredString = (value) => {
   if (typeof value !== 'string') {
@@ -22,7 +19,9 @@ const encodeStoredString = (value) => JSON.stringify(String(value));
 
 const readStringSetting = (key) => {
   const db = ensureDatabase();
-  const row = db.prepare(`SELECT value_json FROM app_settings WHERE key = ?`).get(String(key));
+  const row = db
+    .prepare(`SELECT value_json FROM app_settings WHERE key = ?`)
+    .get(normalizeStorageKey(key));
   return row ? decodeStoredString(row.value_json) : null;
 };
 
@@ -37,7 +36,7 @@ const writeStringSetting = (key, value) => {
        value_json = excluded.value_json,
        updated_at = excluded.updated_at`
   ).run({
-    key: String(key),
+    key: normalizeStorageKey(key),
     value_json: encodeStoredString(value),
     updated_at: updatedAt,
   });
@@ -45,44 +44,17 @@ const writeStringSetting = (key, value) => {
 
 const removeStringSetting = (key) => {
   const db = ensureDatabase();
-  db.prepare(`DELETE FROM app_settings WHERE key = ?`).run(String(key));
+  db.prepare(`DELETE FROM app_settings WHERE key = ?`).run(normalizeStorageKey(key));
 };
 
-const readAppStorageValue = (key) => {
-  const normalizedKey = String(key);
+const readAppStorageValue = (key) => readStringSetting(key);
 
-  if (normalizedKey === 'providerSettings') {
-    return readProviderSettingsValue();
-  }
+const writeAppStorageValue = (key, value) => writeStringSetting(key, String(value ?? ''));
 
-  return readStringSetting(normalizedKey);
-};
-
-const writeAppStorageValue = (key, value) => {
-  const normalizedKey = String(key);
-  const normalizedValue = String(value ?? '');
-
-  if (normalizedKey === 'providerSettings') {
-    writeProviderSettingsValue(normalizedValue);
-    return;
-  }
-
-  writeStringSetting(normalizedKey, normalizedValue);
-};
-
-const removeAppStorageValue = (key) => {
-  const normalizedKey = String(key);
-
-  if (normalizedKey === 'providerSettings') {
-    clearProviderSettingsValue();
-    return;
-  }
-
-  removeStringSetting(normalizedKey);
-};
+const removeAppStorageValue = (key) => removeStringSetting(key);
 
 const listAppStorageValues = (keys) => {
-  const requestedKeys = Array.isArray(keys) ? keys.map((key) => String(key)) : [];
+  const requestedKeys = Array.isArray(keys) ? keys.map(normalizeStorageKey) : [];
 
   return Object.fromEntries(
     requestedKeys.map((key) => {

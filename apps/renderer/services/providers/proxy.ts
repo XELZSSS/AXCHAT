@@ -1,5 +1,5 @@
-const DEFAULT_PROXY_PORT = '4010';
-const DEFAULT_PROXY_HOST = '127.0.0.1';
+import * as proxyConfig from '../../../shared/proxy-config';
+
 const AUTH_HEADER = 'x-axchat-proxy-token';
 
 const normalizeString = (value: unknown): string | undefined => {
@@ -8,18 +8,13 @@ const normalizeString = (value: unknown): string | undefined => {
   return normalized.length > 0 && normalized !== 'undefined' ? normalized : undefined;
 };
 
-const resolveProxyPort = (value: unknown): string => {
-  const parsed = Number.parseInt(normalizeString(value) ?? DEFAULT_PROXY_PORT, 10);
-  if (!Number.isFinite(parsed) || parsed < 1 || parsed > 65535) {
-    return DEFAULT_PROXY_PORT;
-  }
-  return String(parsed);
-};
+const resolveProxyPort = (value: unknown): string => proxyConfig.resolveProxyPort(value);
 
-const resolveProxyHost = (value: unknown): string => normalizeString(value) ?? DEFAULT_PROXY_HOST;
+const resolveProxyHost = (value: unknown): string =>
+  normalizeString(value) ?? proxyConfig.DEFAULT_PROXY_HOST;
 
 const buildProxyOrigin = ({ host, port }: { host: string; port: string }): string =>
-  `http://${host}:${port}`;
+  proxyConfig.buildProxyOrigin({ host, port });
 
 const readProxyPort = (): string => {
   const fromBridge = typeof window !== 'undefined' ? window.axchat?.getProxyPort?.() : undefined;
@@ -45,15 +40,8 @@ export const buildProxyUrl = (path: string): string => {
   return `${getProxyBaseUrl()}${normalizedPath}`;
 };
 
-export const getProxyToken = (): string | undefined => {
-  const fromBridge = typeof window !== 'undefined' ? window.axchat?.getProxyToken?.() : undefined;
-  return normalizeString(fromBridge) || normalizeString(process.env.AXCHAT_PROXY_TOKEN);
-};
-
 export const getProxyAuthHeaders = (): Record<string, string> => {
-  const token = getProxyToken();
-  if (!token) return {};
-  return { [AUTH_HEADER]: token };
+  return {};
 };
 
 const isLocalProxyTarget = (target?: string): boolean => {
@@ -66,7 +54,7 @@ const isLocalProxyTarget = (target?: string): boolean => {
       url.hostname === '127.0.0.1' ||
       url.hostname === currentProxyHost;
     if (!isLoopback) return false;
-    return url.pathname.startsWith('/proxy');
+    return url.pathname.startsWith(proxyConfig.PROXY_PATH_PREFIX);
   } catch {
     return false;
   }

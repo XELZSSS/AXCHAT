@@ -1,11 +1,36 @@
-import React, { useCallback, useMemo } from 'react';
-import { ProviderId } from '../../types';
+import { memo, useCallback, useMemo } from 'react';
+import type { ChangeEvent } from 'react';
+import { GeminiEmbeddingConfig, ProviderId } from '../../types';
 import { t } from '../../utils/i18n';
 import Dropdown, { DropdownOption } from '../settings/Dropdown';
-import { fullInputClass, smInputClass, resolveBaseUrlForRegion } from './constants';
+import {
+  fullInputClass,
+  getGeminiEmbeddingTaskOptions,
+  resolveBaseUrlForRegion,
+  smInputClass,
+} from './constants';
 import { Button, Field, Input } from '../ui';
 import { DeleteOutlineIcon } from '../icons';
 import SecretInput from './SecretInput';
+import {
+  DEFAULT_GEMINI_EMBEDDING_MODEL,
+  DEFAULT_GEMINI_EMBEDDING_OUTPUT_DIMENSIONALITY,
+  DEFAULT_GEMINI_EMBEDDING_TASK_TYPE,
+} from '../../services/providers/geminiEmbeddings';
+
+const SECTION_LABEL_CLASS = 'text-xs font-medium text-[var(--ink-2)]';
+const SUB_LABEL_CLASS = 'text-xs text-[var(--ink-3)]';
+const REGION_BUTTON_BASE =
+  'flex-1 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 ring-[var(--line-1)] transition-colors duration-160 ease-out';
+
+type GeminiEmbeddingSectionProps = {
+  embedding: GeminiEmbeddingConfig;
+  portalContainer: HTMLElement | null;
+  onSetEmbeddingField: <K extends keyof GeminiEmbeddingConfig>(
+    key: K,
+    value: GeminiEmbeddingConfig[K]
+  ) => void;
+};
 
 type ProviderTabProps = {
   providerId: ProviderId;
@@ -15,15 +40,12 @@ type ProviderTabProps = {
   apiKey: string;
   baseUrl?: string;
   customHeaders: Array<{ key: string; value: string }>;
+  embedding: GeminiEmbeddingConfig;
   showApiKey: boolean;
   supportsBaseUrl?: boolean;
   supportsCustomHeaders?: boolean;
   supportsRegion?: boolean;
   isOfficialProvider?: boolean;
-  secretStorageInfo: {
-    mode: 'secure' | 'plain';
-    backend: string;
-  };
   portalContainer: HTMLElement | null;
   onProviderChange: (providerId: ProviderId) => void;
   onModelNameChange: (value: string) => void;
@@ -31,6 +53,10 @@ type ProviderTabProps = {
   onToggleApiKeyVisibility: () => void;
   onClearApiKey: () => void;
   onBaseUrlChange: (value: string) => void;
+  onSetEmbeddingField: <K extends keyof GeminiEmbeddingConfig>(
+    key: K,
+    value: GeminiEmbeddingConfig[K]
+  ) => void;
   onAddCustomHeader: () => void;
   onSetCustomHeaderKey: (index: number, value: string) => void;
   onSetCustomHeaderValue: (index: number, value: string) => void;
@@ -38,7 +64,102 @@ type ProviderTabProps = {
   onSetRegionBaseUrl: (region: 'intl' | 'cn') => void;
 };
 
-const ProviderTab: React.FC<ProviderTabProps> = ({
+const GeminiEmbeddingSection = memo<GeminiEmbeddingSectionProps>(
+  ({ embedding, portalContainer, onSetEmbeddingField }) => {
+    const embeddingTaskOptions = useMemo(() => getGeminiEmbeddingTaskOptions(), []);
+
+    const handleEmbeddingModelChange = useCallback(
+      (event: ChangeEvent<HTMLInputElement>) =>
+        onSetEmbeddingField('model', event.target.value || undefined),
+      [onSetEmbeddingField]
+    );
+    const handleEmbeddingOutputDimensionalityChange = useCallback(
+      (event: ChangeEvent<HTMLInputElement>) => {
+        const normalized = event.target.value.replace(/[^\d]/g, '');
+        onSetEmbeddingField('outputDimensionality', normalized ? Number(normalized) : undefined);
+      },
+      [onSetEmbeddingField]
+    );
+    const handleEmbeddingTitleChange = useCallback(
+      (event: ChangeEvent<HTMLInputElement>) =>
+        onSetEmbeddingField('title', event.target.value || undefined),
+      [onSetEmbeddingField]
+    );
+    const handleEmbeddingTaskTypeChange = useCallback(
+      (value: string) =>
+        onSetEmbeddingField('taskType', value as GeminiEmbeddingConfig['taskType']),
+      [onSetEmbeddingField]
+    );
+
+    return (
+      <Field label={t('settings.modal.embedding.title')}>
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className={SUB_LABEL_CLASS}>{t('settings.modal.embedding.model')}</label>
+              <Input
+                type="text"
+                value={embedding.model ?? ''}
+                onChange={handleEmbeddingModelChange}
+                placeholder={DEFAULT_GEMINI_EMBEDDING_MODEL}
+                className={fullInputClass}
+                compact
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className={SUB_LABEL_CLASS}>
+                {t('settings.modal.embedding.outputDimensionality')}
+              </label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={embedding.outputDimensionality ?? ''}
+                onChange={handleEmbeddingOutputDimensionalityChange}
+                placeholder={String(DEFAULT_GEMINI_EMBEDDING_OUTPUT_DIMENSIONALITY)}
+                className={fullInputClass}
+                compact
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className={SUB_LABEL_CLASS}>{t('settings.modal.embedding.taskType')}</label>
+              <Dropdown
+                value={embedding.taskType ?? DEFAULT_GEMINI_EMBEDDING_TASK_TYPE}
+                options={embeddingTaskOptions}
+                onChange={handleEmbeddingTaskTypeChange}
+                widthClassName="w-full"
+                portalContainer={portalContainer}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className={SUB_LABEL_CLASS}>{t('settings.modal.embedding.titleField')}</label>
+              <Input
+                type="text"
+                value={embedding.title ?? ''}
+                onChange={handleEmbeddingTitleChange}
+                placeholder={t('settings.modal.embedding.titleField.placeholder')}
+                className={fullInputClass}
+                compact
+                autoComplete="off"
+              />
+            </div>
+          </div>
+        </div>
+      </Field>
+    );
+  }
+);
+
+GeminiEmbeddingSection.displayName = 'GeminiEmbeddingSection';
+
+const ProviderTab = ({
   providerId,
   providerOptions,
   modelName,
@@ -46,12 +167,12 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
   apiKey,
   baseUrl,
   customHeaders,
+  embedding,
   showApiKey,
   supportsBaseUrl,
   supportsCustomHeaders,
   supportsRegion,
   isOfficialProvider,
-  secretStorageInfo,
   portalContainer,
   onProviderChange,
   onModelNameChange,
@@ -59,12 +180,13 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
   onToggleApiKeyVisibility,
   onClearApiKey,
   onBaseUrlChange,
+  onSetEmbeddingField,
   onAddCustomHeader,
   onSetCustomHeaderKey,
   onSetCustomHeaderValue,
   onRemoveCustomHeader,
   onSetRegionBaseUrl,
-}) => {
+}: ProviderTabProps) => {
   const modelLabel = useMemo(
     () => `${t('settings.modal.model.current')}: ${currentModelName || '-'}`,
     [currentModelName]
@@ -79,28 +201,24 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
     [onProviderChange]
   );
   const handleModelNameChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => onModelNameChange(event.target.value),
+    (event: ChangeEvent<HTMLInputElement>) => onModelNameChange(event.target.value),
     [onModelNameChange]
   );
   const handleApiKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => onApiKeyChange(event.target.value),
+    (event: ChangeEvent<HTMLInputElement>) => onApiKeyChange(event.target.value),
     [onApiKeyChange]
   );
   const handleBaseUrlChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => onBaseUrlChange(event.target.value),
+    (event: ChangeEvent<HTMLInputElement>) => onBaseUrlChange(event.target.value),
     [onBaseUrlChange]
   );
+  const isIntlRegion = baseUrl === resolveBaseUrlForRegion(providerId, 'intl');
+  const isCnRegion = baseUrl === resolveBaseUrlForRegion(providerId, 'cn');
   const handleRegionIntl = useCallback(() => onSetRegionBaseUrl('intl'), [onSetRegionBaseUrl]);
   const handleRegionCn = useCallback(() => onSetRegionBaseUrl('cn'), [onSetRegionBaseUrl]);
 
   return (
     <div className="space-y-4">
-      {secretStorageInfo.mode === 'plain' ? (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-          {t('settings.secrets.warning.plain')}
-        </div>
-      ) : null}
-
       <Field label={t('settings.modal.provider')}>
         <Dropdown
           value={providerId}
@@ -135,14 +253,20 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
         inputClassName={`${fullInputClass} pr-20`}
       />
 
+      {providerId === 'gemini' && (
+        <GeminiEmbeddingSection
+          embedding={embedding}
+          portalContainer={portalContainer}
+          onSetEmbeddingField={onSetEmbeddingField}
+        />
+      )}
+
       {(supportsBaseUrl || supportsCustomHeaders) && (
         <div className="space-y-3">
           {supportsBaseUrl && (
             <div className="space-y-2">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-[var(--ink-2)]">
-                  {t('settings.modal.baseUrl')}
-                </label>
+                <label className={SECTION_LABEL_CLASS}>{t('settings.modal.baseUrl')}</label>
                 <Input
                   type="text"
                   value={baseUrl ?? ''}
@@ -159,9 +283,7 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
           {supportsCustomHeaders && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-[var(--ink-2)]">
-                  {t('settings.modal.customHeaders')}
-                </label>
+                <label className={SECTION_LABEL_CLASS}>{t('settings.modal.customHeaders')}</label>
                 <Button
                   onClick={onAddCustomHeader}
                   variant="ghost"
@@ -205,7 +327,7 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
                       onClick={() => onRemoveCustomHeader(index)}
                       variant="ghost"
                       size="sm"
-                      className="!px-1 !py-1 hover:text-red-400"
+                      className="!px-1 !py-1 hover:text-[var(--status-error)]"
                       aria-label={t('settings.modal.customHeaders.remove')}
                       title={t('settings.modal.customHeaders.remove')}
                     >
@@ -221,16 +343,14 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
 
       {supportsRegion && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-[var(--ink-2)]">
-            {t('settings.modal.region')}
-          </label>
+          <label className={SECTION_LABEL_CLASS}>{t('settings.modal.region')}</label>
           <div className="flex gap-2">
             <Button
               onClick={handleRegionIntl}
               size="sm"
               variant="ghost"
-              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 ring-[var(--line-1)] transition-colors duration-160 ease-out ${
-                baseUrl === resolveBaseUrlForRegion(providerId, 'intl')
+              className={`${REGION_BUTTON_BASE} ${
+                isIntlRegion
                   ? 'bg-[var(--bg-2)] text-[var(--ink-1)]'
                   : 'text-[var(--ink-3)] hover:bg-[var(--bg-2)] hover:text-[var(--ink-1)]'
               }`}
@@ -241,8 +361,8 @@ const ProviderTab: React.FC<ProviderTabProps> = ({
               onClick={handleRegionCn}
               size="sm"
               variant="ghost"
-              className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium ring-1 ring-[var(--line-1)] transition-colors duration-160 ease-out ${
-                baseUrl === resolveBaseUrlForRegion(providerId, 'cn')
+              className={`${REGION_BUTTON_BASE} ${
+                isCnRegion
                   ? 'bg-[var(--bg-2)] text-[var(--ink-1)]'
                   : 'text-[var(--ink-3)] hover:bg-[var(--bg-2)] hover:text-[var(--ink-1)]'
               }`}
