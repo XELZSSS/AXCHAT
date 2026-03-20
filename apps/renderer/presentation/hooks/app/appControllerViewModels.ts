@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ChatMessage } from '@/shared/types/chat';
 import type { Language, LanguagePreference } from '@/shared/utils/i18n';
-import type { Theme, ThemePreference } from '@/shared/utils/theme';
+import type { AccentPreference, Theme, ThemePreference } from '@/shared/utils/theme';
 import type { ProviderSettingsMap } from '@/application/settings/settingsTypes';
 import type { AppliedSettingsImport } from '@/application/settings/settingsTransfer';
 import type { useStreamingMessages } from '@/presentation/hooks/chat/useStreamingMessages';
@@ -22,6 +22,7 @@ type UseSettingsModalPropsOptions = {
   languagePreference: LanguagePreference;
   theme: Theme;
   themePreference: ThemePreference;
+  accentPreference: AccentPreference;
   currentProviderSettings: ProviderSettingsMap[keyof ProviderSettingsMap] | undefined;
   settingsInteractionLockReason: string | null;
   handleCloseSettings: () => void;
@@ -41,6 +42,7 @@ export const useSettingsModalProps = ({
   languagePreference,
   theme,
   themePreference,
+  accentPreference,
   currentProviderSettings,
   settingsInteractionLockReason,
   handleCloseSettings,
@@ -62,6 +64,7 @@ export const useSettingsModalProps = ({
       languagePreference,
       theme,
       themePreference,
+      accentPreference,
       interactionLockReason: settingsInteractionLockReason,
       baseUrl: currentProviderSettings?.baseUrl,
       geminiCliProjectId: currentProviderSettings?.geminiCliProjectId,
@@ -91,6 +94,7 @@ export const useSettingsModalProps = ({
       language,
       languagePreference,
       providerSettings,
+      accentPreference,
       theme,
       themePreference,
       updaterStatus,

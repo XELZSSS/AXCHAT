@@ -11,7 +11,7 @@ import {
 import type { OpenAIRequestMode } from '@/infrastructure/providers/types';
 import { GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '@/shared/types/chat';
 import { t, type LanguagePreference } from '@/shared/utils/i18n';
-import type { ThemePreference } from '@/shared/utils/theme';
+import type { AccentPreference, ThemePreference } from '@/shared/utils/theme';
 import {
   providerMeta,
   resolveBaseUrlForProvider,
@@ -101,6 +101,7 @@ type BuildStateInput = {
   requestMode?: OpenAIRequestMode;
   languagePreference: LanguagePreference;
   themePreference: ThemePreference;
+  accentPreference: AccentPreference;
   baseUrl?: string;
   geminiCliProjectId?: string;
   googleCloudProject?: string;
@@ -127,6 +128,7 @@ const buildStateFromInput = (
       activeProviderId: input.providerId,
       languagePreference: input.languagePreference,
       themePreference: input.themePreference,
+      accentPreference: input.accentPreference,
       allowHttpTargets: appSettings.allowHttpTargets,
       toolCallMaxRounds: appSettings.toolCallMaxRounds,
     },
@@ -152,6 +154,7 @@ export const useSettingsForm = ({
   requestMode,
   languagePreference,
   themePreference,
+  accentPreference,
   baseUrl,
   geminiCliProjectId,
   googleCloudProject,
@@ -181,6 +184,7 @@ export const useSettingsForm = ({
           requestMode,
           languagePreference,
           themePreference,
+          accentPreference,
           baseUrl,
           geminiCliProjectId,
           googleCloudProject,
@@ -211,6 +215,7 @@ export const useSettingsForm = ({
       providerId,
       requestMode,
       tavily,
+      accentPreference,
       themePreference,
     ]
   );

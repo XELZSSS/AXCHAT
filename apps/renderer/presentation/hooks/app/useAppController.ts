@@ -20,8 +20,10 @@ import {
 } from '@/infrastructure/persistence/storageKeys';
 import { useAppSettings } from '@/presentation/hooks/settings/useAppSettings';
 import {
+  AccentPreference,
   Theme,
   ThemePreference,
+  getAccentPreference,
   getTheme,
   getThemePreference,
 } from '@/shared/utils/theme';
@@ -32,7 +34,6 @@ import {
   useSystemLanguageSync,
   useSystemThemeSync,
   useTrayLanguageSync,
-  useUpdaterDownloadPrompt,
 } from '@/presentation/hooks/app/appControllerEffects';
 import { DEFAULT_UPDATER_STATUS } from '@/infrastructure/updater/updaterClient';
 import { hasSearchConfig } from '@/infrastructure/providers/tavily';
@@ -58,13 +59,16 @@ export const useAppController = () => {
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>(() =>
     getThemePreference()
   );
+  const [accentPreference, setAccentPreferenceState] = useState<AccentPreference>(() =>
+    getAccentPreference()
+  );
   const [appVersion, setAppVersion] = useState<string>(() => readAppStorage('appVersion') ?? '');
   const [updaterStatus, setUpdaterStatus] = useState<UpdaterStatus>(() => {
     const cached = readAppStorage('updaterStatus');
     if (!cached) return DEFAULT_UPDATER_STATUS;
     try {
-      const parsed = JSON.parse(cached) as UpdaterStatus;
-      return parsed.status ? parsed : DEFAULT_UPDATER_STATUS;
+      const parsed = JSON.parse(cached) as Partial<UpdaterStatus>;
+      return parsed.status ? { ...DEFAULT_UPDATER_STATUS, ...parsed } : DEFAULT_UPDATER_STATUS;
     } catch {
       return DEFAULT_UPDATER_STATUS;
     }
@@ -89,8 +93,7 @@ export const useAppController = () => {
   }, []);
 
   useElectronBodyClass();
-  useUpdaterDownloadPrompt();
-  useDocumentAppearance(language, theme);
+  useDocumentAppearance(language, theme, accentPreference);
   useAppMetadataSync({ setAppVersion, setUpdaterStatus });
 
   const commitCurrentSessionNowRef = useRef<(() => void) | null>(null);
@@ -164,6 +167,7 @@ export const useAppController = () => {
     setLanguageState,
     setThemePreferenceState,
     setThemeState,
+    setAccentPreferenceState,
     commitCurrentSession,
     startNewChat,
   });
@@ -189,6 +193,7 @@ export const useAppController = () => {
     languagePreference,
     theme,
     themePreference,
+    accentPreference,
     currentProviderSettings,
     settingsInteractionLockReason,
     handleCloseSettings,

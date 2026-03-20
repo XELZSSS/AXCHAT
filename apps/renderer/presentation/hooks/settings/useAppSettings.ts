@@ -3,7 +3,13 @@ import { ChatService } from '@/application/chat/chatService';
 import { ProviderId } from '@/shared/types/chat';
 import { ProviderSettingsMap, SaveSettingsPayload } from '@/application/settings/settingsTypes';
 import { Language, LanguagePreference, setLanguagePreference, t } from '@/shared/utils/i18n';
-import { Theme, ThemePreference, setThemePreference } from '@/shared/utils/theme';
+import {
+  AccentPreference,
+  Theme,
+  ThemePreference,
+  setAccentPreference,
+  setThemePreference,
+} from '@/shared/utils/theme';
 import { persistAppSettings } from '@/infrastructure/persistence/appSettingsStore';
 import type { AppliedSettingsImport } from '@/application/settings/settingsTransfer';
 import type { ProviderSettings } from '@/infrastructure/providers/defaults';
@@ -17,6 +23,7 @@ type UseAppSettingsOptions = {
   setLanguageState: Dispatch<SetStateAction<Language>>;
   setThemePreferenceState: Dispatch<SetStateAction<ThemePreference>>;
   setThemeState: Dispatch<SetStateAction<Theme>>;
+  setAccentPreferenceState: Dispatch<SetStateAction<AccentPreference>>;
   commitCurrentSession: (options?: { force?: boolean }) => void;
   startNewChat: () => void;
 };
@@ -57,6 +64,7 @@ export const useAppSettings = ({
   setLanguageState,
   setThemePreferenceState,
   setThemeState,
+  setAccentPreferenceState,
   commitCurrentSession,
   startNewChat,
 }: UseAppSettingsOptions) => {
@@ -74,10 +82,12 @@ export const useAppSettings = ({
     (value: SaveSettingsPayload) => {
       const resolvedLanguage = setLanguagePreference(value.app.languagePreference);
       const resolvedTheme = setThemePreference(value.app.themePreference);
+      const resolvedAccent = setAccentPreference(value.app.accentPreference);
       setLanguagePreferenceState(value.app.languagePreference);
       setLanguageState(resolvedLanguage);
       setThemePreferenceState(value.app.themePreference);
       setThemeState(resolvedTheme);
+      setAccentPreferenceState(resolvedAccent);
       syncTrayLabels(resolvedLanguage);
       persistAppSettings(value.app);
 
@@ -128,6 +138,7 @@ export const useAppSettings = ({
       setLanguageState,
       setThemePreferenceState,
       setThemeState,
+      setAccentPreferenceState,
       startNewChat,
       syncProviderState,
       syncTrayLabels,
@@ -148,10 +159,12 @@ export const useAppSettings = ({
     ({ appSettings, providerSettings: importedProviderSettings }: AppliedSettingsImport) => {
       const resolvedLanguage = setLanguagePreference(appSettings.languagePreference);
       const resolvedTheme = setThemePreference(appSettings.themePreference);
+      const resolvedAccent = setAccentPreference(appSettings.accentPreference);
       setLanguagePreferenceState(appSettings.languagePreference);
       setLanguageState(resolvedLanguage);
       setThemePreferenceState(appSettings.themePreference);
       setThemeState(resolvedTheme);
+      setAccentPreferenceState(resolvedAccent);
       syncTrayLabels(resolvedLanguage);
       persistAppSettings(appSettings);
       void window.axchat?.setProxyAllowHttpTargets?.(appSettings.allowHttpTargets);
@@ -185,6 +198,7 @@ export const useAppSettings = ({
       setLanguageState,
       setThemePreferenceState,
       setThemeState,
+      setAccentPreferenceState,
       startNewChat,
       syncProviderState,
       syncTrayLabels,

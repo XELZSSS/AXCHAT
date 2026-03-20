@@ -13,7 +13,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    'border border-[var(--action-interactive)] bg-[var(--action-interactive)] text-[var(--text-on-interactive)] hover:border-[var(--action-interactive-hover)] hover:bg-[var(--action-interactive-hover)]',
+    'border border-[var(--accent)] bg-[var(--accent)] text-[var(--text-on-accent)] hover:border-[var(--accent-strong)] hover:bg-[var(--accent-strong)]',
   ghost: 'text-[var(--ink-2)] hover:text-[var(--ink-1)] hover:bg-[var(--bg-2)]',
   subtle: 'border border-[var(--line-1)] text-[var(--ink-1)] hover:bg-[var(--bg-2)]',
   danger:

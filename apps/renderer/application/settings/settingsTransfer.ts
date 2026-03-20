@@ -156,6 +156,22 @@ const normalizeImportedAppSettings = (value: unknown): PartialAppSettingsSnapsho
   ) {
     next.themePreference = raw.themePreference;
   }
+  if (
+    raw.accentPreference === 'neutral' ||
+    raw.accentPreference === 'blue' ||
+    raw.accentPreference === 'sky' ||
+    raw.accentPreference === 'cyan' ||
+    raw.accentPreference === 'teal' ||
+    raw.accentPreference === 'green' ||
+    raw.accentPreference === 'lime' ||
+    raw.accentPreference === 'amber' ||
+    raw.accentPreference === 'orange' ||
+    raw.accentPreference === 'rose' ||
+    raw.accentPreference === 'red' ||
+    raw.accentPreference === 'violet'
+  ) {
+    next.accentPreference = raw.accentPreference;
+  }
 
   const allowHttpTargets = normalizeBoolean(raw.allowHttpTargets);
   if (allowHttpTargets !== undefined) {

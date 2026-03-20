@@ -20,7 +20,9 @@ type VersionTabProps = {
     | 'idle'
     | 'checking'
     | 'available'
+    | 'downloading'
     | 'downloaded'
+    | 'redirecting'
     | 'not-available'
     | 'error'
     | 'disabled';

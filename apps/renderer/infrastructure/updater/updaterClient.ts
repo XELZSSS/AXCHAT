@@ -1,5 +1,15 @@
 export type UpdaterStatus = {
-  status: 'idle' | 'disabled' | 'checking' | 'available' | 'not-available' | 'error';
+  status:
+    | 'idle'
+    | 'disabled'
+    | 'checking'
+    | 'available'
+    | 'downloading'
+    | 'downloaded'
+    | 'redirecting'
+    | 'not-available'
+    | 'error';
+  distribution: 'development' | 'portable' | 'installer';
   message: string;
   version: string;
   availableVersion: string;
@@ -9,6 +19,7 @@ export type UpdaterStatus = {
 
 export const DEFAULT_UPDATER_STATUS: UpdaterStatus = {
   status: 'idle',
+  distribution: 'development',
   message: '',
   version: '',
   availableVersion: '',

@@ -2,7 +2,7 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import { GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '@/shared/types/chat';
 import type { OpenAIRequestMode } from '@/infrastructure/providers/types';
 import { t, type Language, type LanguagePreference } from '@/shared/utils/i18n';
-import type { Theme, ThemePreference } from '@/shared/utils/theme';
+import type { AccentPreference, Theme, ThemePreference } from '@/shared/utils/theme';
 import { useSettingsController } from '@/presentation/components/settingsModal/useSettingsController';
 import {
   ProviderSettingsMap,
@@ -24,7 +24,9 @@ import {
   useClearCacheFeedback,
 } from '@/presentation/components/settingsModal/SettingsModalParts';
 import { SettingsModalTabContent } from '@/presentation/components/settingsModal/SettingsModalTabContent';
+import { useSettingsClearCache } from '@/presentation/components/settingsModal/useSettingsClearCache';
 import { useSettingsTransfer } from '@/presentation/components/settingsModal/useSettingsTransfer';
+
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -37,6 +39,7 @@ interface SettingsModalProps {
   languagePreference: LanguagePreference;
   theme: Theme;
   themePreference: ThemePreference;
+  accentPreference: AccentPreference;
   baseUrl?: string;
   geminiCliProjectId?: string;
   googleCloudProject?: string;
@@ -67,6 +70,7 @@ const SettingsModal = ({
   languagePreference,
   theme,
   themePreference,
+  accentPreference,
   baseUrl,
   geminiCliProjectId,
   googleCloudProject,
@@ -96,6 +100,7 @@ const SettingsModal = ({
     requestMode,
     languagePreference,
     themePreference,
+    accentPreference,
     baseUrl,
     geminiCliProjectId,
     googleCloudProject,
@@ -138,34 +143,18 @@ const SettingsModal = ({
   const { clearCacheNotice, clearCacheStatus, showClearCacheSuccess, showClearCacheError } =
     useClearCacheFeedback();
   const [includeSecretsInExport, setIncludeSecretsInExport] = useState(false);
-  const [isClearCacheConfirmOpen, setIsClearCacheConfirmOpen] = useState(false);
-
-  const handleClearCache = useCallback(async () => {
-    try {
-      const resetLocalData = window.axchat?.resetLocalData ?? window.axchat?.clearCache;
-      const result = await resetLocalData?.();
-      if (result?.ok) {
-        showClearCacheSuccess();
-        return;
-      }
-      showClearCacheError();
-    } catch (error) {
-      console.error('Failed to reset local data:', error);
-      showClearCacheError();
-    }
-  }, [showClearCacheError, showClearCacheSuccess]);
-
-  const handleOpenClearCacheConfirm = useCallback(() => {
-    if (!interactionLockReason) {
-      setIsClearCacheConfirmOpen(true);
-    }
-  }, [interactionLockReason]);
-  const handleCancelClearCache = useCallback(() => setIsClearCacheConfirmOpen(false), []);
-  const handleConfirmClearCache = useCallback(() => {
-    setIsClearCacheConfirmOpen(false);
-    void handleClearCache();
-  }, [handleClearCache]);
-
+  const {
+    clearCacheConfirmDescription,
+    isClearCacheConfirmOpen,
+    handleOpenClearCacheConfirm,
+    handleCancelClearCache,
+    handleConfirmClearCache,
+  } = useSettingsClearCache({
+    distribution: updaterStatus.distribution,
+    interactionLockReason,
+    showClearCacheSuccess,
+    showClearCacheError,
+  });
   const updateStatusText = getUpdateStatusText(updaterStatus);
   const currentAppSettings = useMemo(
     () => buildResolvedAppSettingsSnapshot({ ...state.app }),
@@ -200,14 +189,13 @@ const SettingsModal = ({
     interactionLockReason,
     onImportSettings,
   });
-
   return (
     <>
       <Modal
         isOpen={isOpen}
+        title={t('settings.modal.title')}
         className="max-w-[min(64rem,calc(100vw-2rem))]"
         onClose={requestClose}
-        ariaLabelledBy={modalTitleId}
       >
         <div className="w-full">
           <SettingsModalHeader modalTitleId={modalTitleId} onClose={requestClose} />
@@ -217,7 +205,6 @@ const SettingsModal = ({
               overflowCount={validationOverflowCount}
             />
           ) : null}
-
           <div className="flex h-[76vh] min-h-0 flex-col gap-4 overflow-hidden px-4 py-3 sm:flex-row">
             <Tabs
               items={tabs}
@@ -238,6 +225,7 @@ const SettingsModal = ({
                 providerOptions={providerOptions}
                 language={language}
                 theme={theme}
+                accentPreference={state.app.accentPreference}
                 modelName={modelName}
                 appVersion={appVersion}
                 updaterStatus={updaterStatus}
@@ -261,7 +249,6 @@ const SettingsModal = ({
               />
             </div>
           </div>
-
           <SettingsModalFooter
             onOpenAuthorPage={handleOpenAuthorPage}
             onClose={requestClose}
@@ -274,6 +261,7 @@ const SettingsModal = ({
 
       <ConfirmDialog
         isOpen={showDiscardChangesPrompt}
+        showOverlay={false}
         title={t('settings.modal.unsaved.title')}
         description={t('settings.modal.unsaved.description')}
         confirmLabel={t('settings.modal.unsaved.confirm')}
@@ -281,10 +269,12 @@ const SettingsModal = ({
         onConfirm={confirmDiscardChanges}
         onCancel={cancelDiscardChanges}
       />
+
       <ConfirmDialog
         isOpen={isOpen && isClearCacheConfirmOpen}
+        showOverlay={false}
         title={t('settings.clearCache.cardTitle')}
-        description={t('settings.clearCache.confirm')}
+        description={clearCacheConfirmDescription}
         confirmLabel={t('settings.clearCache.confirmAction')}
         cancelLabel={t('settings.modal.cancel')}
         onConfirm={handleConfirmClearCache}

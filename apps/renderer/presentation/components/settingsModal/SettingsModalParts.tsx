@@ -37,14 +37,22 @@ export const getUpdateStatusText = (updaterStatus: UpdaterStatus): string => {
   const passiveStatusTextMap: Record<PassiveUpdaterStatus, string> = {
     idle: '',
     checking: t('settings.update.status.checking'),
+    downloading: t('settings.update.status.downloading'),
+    downloaded: t('settings.update.status.downloaded'),
+    redirecting: t('settings.update.status.redirecting'),
     'not-available': t('settings.update.status.latest'),
     error: t('settings.update.status.failed'),
     disabled: t('settings.update.status.disabled'),
   };
 
   if (updaterStatus.status === 'available') {
+    const availableVersionSuffix =
+      updaterStatus.distribution === 'portable'
+        ? t('settings.update.status.availableVersionSuffixPortable')
+        : t('settings.update.status.availableVersionSuffix');
+
     return updaterStatus.availableVersion
-      ? `${t('settings.update.status.availableVersionPrefix')} v${updaterStatus.availableVersion}${t('settings.update.status.availableVersionSuffix')}`
+      ? `${t('settings.update.status.availableVersionPrefix')} v${updaterStatus.availableVersion}${availableVersionSuffix}`
       : t('settings.update.status.available');
   }
 
@@ -100,7 +108,8 @@ export const useClearCacheFeedback = () => {
   return {
     clearCacheNotice,
     clearCacheStatus,
-    showClearCacheSuccess: () => setFeedback(t('settings.clearCache.success'), 'success'),
+    showClearCacheSuccess: (notice = t('settings.clearCache.success')) =>
+      setFeedback(notice, 'success'),
     showClearCacheError: () => setFeedback(t('settings.clearCache.failed'), 'error'),
   };
 };

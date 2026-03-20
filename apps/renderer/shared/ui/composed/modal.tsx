@@ -4,11 +4,12 @@ import { cn } from '@/shared/ui/cn';
 
 export type ModalProps = {
   isOpen: boolean;
+  title: string;
   children: ReactNode;
   className?: string;
   overlayClassName?: string;
+  showOverlay?: boolean;
   onClose?: () => void;
-  ariaLabelledBy?: string;
   ariaDescribedBy?: string;
 };
 
@@ -21,24 +22,27 @@ const handleOpenChange = (open: boolean, onClose?: () => void) => {
 
 const Modal = ({
   isOpen,
+  title,
   children,
   className,
   overlayClassName,
+  showOverlay = true,
   onClose,
-  ariaLabelledBy,
   ariaDescribedBy,
 }: ModalProps) => (
   <Dialog.Root open={isOpen} onOpenChange={(open) => handleOpenChange(open, onClose)}>
     <Dialog.Portal>
-      <Dialog.Overlay className={cn(DIALOG_OVERLAY_CLASS, overlayClassName)} />
+      {showOverlay ? (
+        <Dialog.Overlay className={cn(DIALOG_OVERLAY_CLASS, overlayClassName)} />
+      ) : null}
       <Dialog.Content
-        aria-labelledby={ariaLabelledBy}
         aria-describedby={ariaDescribedBy}
         className={cn(
           'fixed left-1/2 top-1/2 z-[71] max-h-[92vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-lg bg-[var(--bg-1)] ring-1 ring-[var(--line-1)] focus:outline-none',
           className
         )}
       >
+        <Dialog.Title className="sr-only">{title}</Dialog.Title>
         {children}
       </Dialog.Content>
     </Dialog.Portal>

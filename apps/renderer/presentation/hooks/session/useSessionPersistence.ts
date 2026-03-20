@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { ChatSession } from '@/shared/types/chat';
+import { isLocalDataResetInProgress } from '@/infrastructure/persistence/localDataResetState';
 import { saveSession } from '@/infrastructure/persistence/sessionStore';
 import { t } from '@/shared/utils/i18n';
 import {
@@ -68,6 +69,10 @@ export const useSessionPersistence = ({
   const persistSessionSnapshot = useCallback(
     (session: ChatSession) => {
       const run = async () => {
+        if (isLocalDataResetInProgress()) {
+          return;
+        }
+
         if (deletedSessionIdsRef.current.has(session.id)) {
           return;
         }
@@ -106,6 +111,11 @@ export const useSessionPersistence = ({
   }, []);
 
   const flushSessionSave = useCallback(async () => {
+    if (isLocalDataResetInProgress()) {
+      discardPendingSessionSave(saveSessionTimerRef, pendingSessionSaveRef);
+      return;
+    }
+
     const pendingSession = consumePendingSessionSave(saveSessionTimerRef, pendingSessionSaveRef);
     if (!pendingSession) {
       return;

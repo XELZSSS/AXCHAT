@@ -10,15 +10,15 @@ const SWITCH_ROOT_BASE_CLASS = [
   'transition-colors duration-160 ease-out',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)]',
   'disabled:cursor-not-allowed disabled:opacity-50',
-  'data-[state=checked]:bg-[var(--action-interactive)]',
-  'data-[state=checked]:border-[var(--line-1)]',
+  'data-[state=checked]:border-[var(--accent)]',
+  'data-[state=checked]:bg-[var(--accent)]',
 ].join(' ');
 
 const SWITCH_THUMB_BASE_CLASS = [
   'pointer-events-none block h-3.5 w-3.5 rounded-full bg-[var(--ink-3)] shadow-sm',
   'translate-x-0.5 transition-transform duration-160 ease-out',
   'data-[state=checked]:translate-x-4',
-  'data-[state=checked]:bg-[var(--text-on-interactive)]',
+  'data-[state=checked]:bg-[var(--text-on-accent)]',
 ].join(' ');
 
 const SwitchRoot = forwardRef<

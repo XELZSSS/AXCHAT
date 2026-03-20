@@ -134,7 +134,7 @@ const SidebarComponent = ({
           size="md"
           disabled={sessionActionsDisabled}
           title={sessionActionsDisabled ? (sessionActionsDisabledReason ?? undefined) : undefined}
-          className="mb-4 flex h-10 w-full items-center justify-center gap-2 text-[var(--text-on-interactive)] hover:text-[var(--text-on-interactive)]"
+          className="mb-4 flex h-10 w-full items-center justify-center gap-2 text-[var(--text-on-accent)] hover:text-[var(--text-on-accent)]"
         >
           <AddIcon size={16} strokeWidth={2} />
           <span className="tracking-[0.02em]">{t('sidebar.newChat')}</span>
@@ -143,7 +143,7 @@ const SidebarComponent = ({
         <div className="mb-3">
           <div className="relative group">
             <SearchIcon
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-3)] group-focus-within:text-[var(--action-interactive)]"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-3)] group-focus-within:text-[var(--accent)]"
               size={14}
               strokeWidth={2}
             />
@@ -245,9 +245,13 @@ const SidebarComponent = ({
             onClick={onOpenSettings}
             variant="ghost"
             size="md"
-            className={SIDEBAR_FOOTER_BUTTON_CLASS}
+            className={`group ${SIDEBAR_FOOTER_BUTTON_CLASS}`}
           >
-            <SettingsOutlinedIcon size={16} strokeWidth={2} />
+            <SettingsOutlinedIcon
+              className="text-[var(--accent)] transition-colors duration-160 ease-out group-hover:text-[var(--accent-strong)]"
+              size={16}
+              strokeWidth={2}
+            />
             <span className="tracking-[0.015em]">{t('sidebar.settings')}</span>
           </Button>
         </div>

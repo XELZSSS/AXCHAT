@@ -63,7 +63,7 @@ declare global {
         quit: string;
       }) => Promise<void>;
       clearCache: () => Promise<{ ok: boolean; relaunching?: boolean }>;
-      resetLocalData: () => Promise<{ ok: boolean; relaunching?: boolean }>;
+      resetLocalData: () => Promise<{ ok: boolean; relaunching?: boolean; action?: 'exit' | 'relaunch' }>;
       exportSettingsTransfer: (payload: {
         contents: string;
         defaultPath?: string;

@@ -53,8 +53,8 @@ const ChatInputComponent = ({
   const isInputDisabled = disabled && !isStreaming;
   const isSearchDisabled = isInputDisabled || !searchAvailable;
   const reasoningButtonToneClass = reasoningEnabled
-    ? 'text-[var(--ink-1)]'
-    : 'text-[var(--ink-3)] hover:text-[var(--ink-1)]';
+    ? 'text-[var(--accent)]'
+    : 'text-[var(--ink-3)] hover:text-[var(--accent)]';
 
   const {
     clearDraft,
@@ -93,12 +93,12 @@ const ChatInputComponent = ({
   const hasInput = input.trim().length > 0;
   const isSendDisabled = isInputDisabled || (!hasInput && !isStreaming);
   const searchButtonToneClass = searchEnabled
-    ? 'text-[var(--ink-1)]'
-    : 'text-[var(--ink-3)] hover:text-[var(--ink-1)]';
+    ? 'text-[var(--accent)]'
+    : 'text-[var(--ink-3)] hover:text-[var(--accent)]';
   const sendButtonToneClass =
     hasInput || isStreaming
-      ? 'text-[var(--ink-1)]'
-      : 'text-[var(--ink-3)] hover:text-[var(--ink-1)]';
+      ? 'text-[var(--accent)]'
+      : 'text-[var(--ink-3)] hover:text-[var(--accent)]';
 
   const stopStreaming = useCallback(() => {
     onStop();

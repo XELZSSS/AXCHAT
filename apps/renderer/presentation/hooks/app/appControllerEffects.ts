@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { t, applyLanguageToDocument, type Language } from '@/shared/utils/i18n';
-import { applyThemeToDocument, refreshSystemTheme, type Theme, type ThemePreference } from '@/shared/utils/theme';
+import {
+  applyThemeToDocument,
+  refreshSystemTheme,
+  type AccentPreference,
+  type Theme,
+  type ThemePreference,
+} from '@/shared/utils/theme';
 import {
   refreshSystemLanguage,
   syncExternalSystemLanguage,
@@ -17,7 +23,11 @@ export const useElectronBodyClass = () => {
   }, []);
 };
 
-export const useDocumentAppearance = (language: Language, theme: Theme) => {
+export const useDocumentAppearance = (
+  language: Language,
+  theme: Theme,
+  accentPreference: AccentPreference
+) => {
   useEffect(() => {
     applyLanguageToDocument();
     document.title = t('app.title');
@@ -25,7 +35,7 @@ export const useDocumentAppearance = (language: Language, theme: Theme) => {
 
   useEffect(() => {
     applyThemeToDocument();
-  }, [theme]);
+  }, [accentPreference, theme]);
 };
 
 export const useUpdaterDownloadPrompt = () => {
@@ -42,7 +52,11 @@ export const useUpdaterDownloadPrompt = () => {
 
     const promptDownloadIfNeeded = (status: UpdaterStatus) => {
       resetPromptFlagIfNeeded(status.status);
-      if (status.status !== 'available' || hasPromptedAvailableUpdateRef.current) {
+      if (
+        status.distribution !== 'portable' ||
+        status.status !== 'available' ||
+        hasPromptedAvailableUpdateRef.current
+      ) {
         return;
       }
 

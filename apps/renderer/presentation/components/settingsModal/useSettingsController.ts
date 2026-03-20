@@ -3,7 +3,7 @@ import { GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '@/shared/types/
 import { buildChatAgentPromptFromParts } from '@/infrastructure/providers/chatAgent';
 import type { OpenAIRequestMode } from '@/infrastructure/providers/types';
 import type { LanguagePreference } from '@/shared/utils/i18n';
-import type { ThemePreference } from '@/shared/utils/theme';
+import type { AccentPreference, ThemePreference } from '@/shared/utils/theme';
 import {
   ActiveSettingsTab,
   SettingsModalState,
@@ -263,6 +263,8 @@ export const useSettingsController = ({
       onLanguagePreferenceChange: (value: LanguagePreference) =>
         setAppField('languagePreference', value),
       onThemePreferenceChange: (value: ThemePreference) => setAppField('themePreference', value),
+      onAccentPreferenceChange: (value: AccentPreference) =>
+        setAppField('accentPreference', value),
     }),
     [setAppField]
   );

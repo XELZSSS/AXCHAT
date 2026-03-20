@@ -6,7 +6,7 @@ import VersionTab from '@/presentation/components/settingsModal/VersionTab';
 import ShortcutsTab from '@/presentation/components/settingsModal/ShortcutsTab';
 import type { useSettingsController } from '@/presentation/components/settingsModal/useSettingsController';
 import type { Language } from '@/shared/utils/i18n';
-import type { Theme } from '@/shared/utils/theme';
+import type { AccentPreference, Theme } from '@/shared/utils/theme';
 import type { ConfigTransferNotice } from '@/presentation/components/settingsModal/VersionTabPreview';
 
 type SettingsControllerValue = ReturnType<typeof useSettingsController>;
@@ -17,6 +17,7 @@ type SettingsModalTabContentProps = {
   providerOptions: SettingsControllerValue['providerOptions'];
   language: Language;
   theme: Theme;
+  accentPreference: AccentPreference;
   modelName: string;
   appVersion: string;
   updaterStatus: import('@/infrastructure/updater/updaterClient').UpdaterStatus;
@@ -45,6 +46,7 @@ export const SettingsModalTabContent = ({
   providerOptions,
   language,
   theme,
+  accentPreference,
   modelName,
   appVersion,
   updaterStatus,
@@ -122,8 +124,10 @@ export const SettingsModalTabContent = ({
           languagePreference={state.app.languagePreference}
           theme={theme}
           themePreference={state.app.themePreference}
+          accentPreference={accentPreference}
           onLanguagePreferenceChange={appearanceActions.onLanguagePreferenceChange}
           onThemePreferenceChange={appearanceActions.onThemePreferenceChange}
+          onAccentPreferenceChange={appearanceActions.onAccentPreferenceChange}
         />
       );
     case 'agent':

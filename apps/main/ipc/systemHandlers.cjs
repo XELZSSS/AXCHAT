@@ -3,6 +3,7 @@ const { app, dialog, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { parseExternalHttpUrl, shouldOpenExternalUrl } = require('../../shared/external-url.cjs');
+const { getDistributionMode } = require('../distribution.cjs');
 const {
   readAppStorageValue,
   writeAppStorageValue,
@@ -16,9 +17,11 @@ const clearBrowserData = async () => {
   return { ok: true };
 };
 
-const scheduleAppRelaunch = () => {
+const scheduleAppRestartAction = (action) => {
   setTimeout(() => {
-    app.relaunch();
+    if (action === 'relaunch') {
+      app.relaunch();
+    }
     app.exit(0);
   }, 600);
 };
@@ -41,6 +44,7 @@ const runLocalDataReset = async ({
   clearPersistedLocalData,
   recoverFromFailedLocalDataReset,
 }) => {
+  const action = getDistributionMode() === 'portable' ? 'exit' : 'relaunch';
   if (typeof prepareForResetLocalData === 'function') {
     await prepareForResetLocalData();
   }
@@ -51,10 +55,11 @@ const runLocalDataReset = async ({
     }
 
     const result = await clearBrowserData();
-    scheduleAppRelaunch();
+    scheduleAppRestartAction(action);
     return {
       ...result,
-      relaunching: true,
+      action,
+      relaunching: action === 'relaunch',
     };
   } catch (error) {
     if (typeof recoverFromFailedLocalDataReset === 'function') {

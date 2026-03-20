@@ -8,9 +8,10 @@ import {
 } from '@/presentation/components/settingsModal/formParts';
 import type { SettingsValidationIssue } from '@/presentation/components/settingsModal/validation';
 
-const ICON_BUTTON_CLASS = 'min-w-0';
+const ICON_BUTTON_CLASS = 'min-w-0 text-[var(--accent)]';
 const ACTIONS_CLASS = 'absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1';
 const LABEL_CLASS = 'text-xs font-medium text-[var(--ink-2)]';
+const VISIBILITY_BUTTON_CLASS = `${ICON_BUTTON_CLASS} hover:text-[var(--accent-strong)]`;
 const CLEAR_BUTTON_CLASS = `${ICON_BUTTON_CLASS} hover:text-[var(--status-error)]`;
 
 const getVisibilityIcon = (showSecret: boolean) =>
@@ -73,7 +74,7 @@ const SecretInput = ({
             onClick={onToggleVisibility}
             variant="ghost"
             size="icon-xs"
-            className={ICON_BUTTON_CLASS}
+            className={VISIBILITY_BUTTON_CLASS}
             aria-label={visibilityLabel}
           >
             {getVisibilityIcon(showSecret)}

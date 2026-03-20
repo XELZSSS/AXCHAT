@@ -1,6 +1,6 @@
 import { GeminiEmbeddingConfig, ProviderId, TavilyConfig } from '@/shared/types/chat';
 import type { LanguagePreference } from '@/shared/utils/i18n';
-import type { ThemePreference } from '@/shared/utils/theme';
+import type { AccentPreference, ThemePreference } from '@/shared/utils/theme';
 import type { OpenAIRequestMode } from '@/infrastructure/providers/types';
 
 export type ActiveSettingsTab =
@@ -36,6 +36,7 @@ export type SettingsModalState = {
     activeProviderId: ProviderId;
     languagePreference: LanguagePreference;
     themePreference: ThemePreference;
+    accentPreference: AccentPreference;
     allowHttpTargets: boolean;
     toolCallMaxRounds: string;
   };

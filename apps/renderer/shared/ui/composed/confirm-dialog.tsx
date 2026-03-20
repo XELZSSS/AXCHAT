@@ -12,9 +12,10 @@ export type ConfirmDialogProps = {
   onConfirm: () => void;
   onCancel: () => void;
   danger?: boolean;
+  showOverlay?: boolean;
 };
 
-const DIALOG_CLASS = 'max-w-md bg-[var(--bg-1)] shadow-none';
+const DIALOG_CLASS = 'z-[81] max-w-md bg-[var(--bg-1)] shadow-none';
 const DANGER_ICON_CLASS =
   'inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--status-error-border)] bg-[var(--status-error-bg)] text-[var(--text-on-brand)]';
 
@@ -61,6 +62,7 @@ const ConfirmDialog = ({
   onConfirm,
   onCancel,
   danger = false,
+  showOverlay = true,
 }: ConfirmDialogProps) => {
   const titleId = useId();
   const descriptionId = useId();
@@ -68,9 +70,10 @@ const ConfirmDialog = ({
   return (
     <Modal
       isOpen={isOpen}
+      title={title}
       className={DIALOG_CLASS}
+      showOverlay={showOverlay}
       onClose={onCancel}
-      ariaLabelledBy={titleId}
       ariaDescribedBy={description ? descriptionId : undefined}
     >
       <div className="px-5 py-4">

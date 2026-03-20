@@ -22,7 +22,7 @@ export const EMOJI_PICKER_CLASS =
 export const EMOJI_BUTTON_CLASS =
   'inline-flex h-8 w-8 items-center justify-center rounded-md text-lg transition-colors duration-160 ease-out hover:bg-[var(--bg-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)]';
 export const EMOJI_TAB_CLASS =
-  'rounded-md px-2 py-1.5 text-xs transition-colors duration-160 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)]';
+  'h-7 rounded-md px-1 py-0.5 text-center text-[10px] leading-none whitespace-nowrap transition-colors duration-160 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)]';
 export const ACTIVE_EMOJI_TAB_CLASS = 'bg-[var(--bg-2)] text-[var(--ink-1)]';
 export const INACTIVE_EMOJI_TAB_CLASS =
   'text-[var(--ink-3)] hover:bg-[var(--bg-2)] hover:text-[var(--ink-1)]';
@@ -31,10 +31,11 @@ export const EMOJI_UTILITY_BUTTON_CLASS =
 export const RECENT_EMOJIS_LIMIT = 16;
 export const EMOJI_PICKER_GAP = 18;
 export const EMOJI_PICKER_VIEWPORT_PADDING = 12;
-export const EMOJI_PICKER_DEFAULT_WIDTH = 320;
-export const EMOJI_PICKER_MIN_WIDTH = 260;
+export const EMOJI_PICKER_DEFAULT_WIDTH = 380;
+export const EMOJI_PICKER_MIN_WIDTH = 320;
 export const EMOJI_PICKER_FALLBACK_HEIGHT = 244;
 export const EMOJI_GRID_COLUMNS = 8;
+export const EMOJI_TAB_COLUMNS = 5;
 export const DEFAULT_EMOJI_CATEGORY: TwemojiGroup = 'Smileys & Emotion';
 export const TWEMOJI_GROUP_LABEL_KEYS: Record<TwemojiGroup, string> = {
   'Smileys & Emotion': 'input.emoji.category.smileys',

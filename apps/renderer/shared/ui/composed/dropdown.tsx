@@ -54,7 +54,9 @@ const getNextFocusedIndex = (key: string, index: number, length: number) => {
 const Dropdown = ({ value, options, onChange, widthClassName }: DropdownProps) => {
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(0);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | undefined>(undefined);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const listboxId = useId();
   const selectedIndex = useMemo(() => resolveSelectedIndex(options, value), [options, value]);
   const selectedOption = useMemo(
@@ -68,6 +70,9 @@ const Dropdown = ({ value, options, onChange, widthClassName }: DropdownProps) =
   }, [focusedIndex, open]);
 
   const handleOpenChange = (nextOpen: boolean) => {
+    setPortalContainer(
+      nextOpen ? (triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? undefined) : undefined
+    );
     setOpen(nextOpen);
     if (nextOpen) setFocusedIndex(selectedIndex);
   };
@@ -109,6 +114,7 @@ const Dropdown = ({ value, options, onChange, widthClassName }: DropdownProps) =
       <Popover.Root open={open} onOpenChange={handleOpenChange}>
         <Popover.Trigger asChild>
           <button
+            ref={triggerRef}
             type="button"
             onKeyDown={handleTriggerKeyDown}
             className={TRIGGER_CLASS}
@@ -119,7 +125,7 @@ const Dropdown = ({ value, options, onChange, widthClassName }: DropdownProps) =
             <span>{selectedOption?.label ?? value}</span>
           </button>
         </Popover.Trigger>
-        <Popover.Portal>
+        <Popover.Portal container={portalContainer}>
           <Popover.Content
             id={listboxId}
             role="listbox"

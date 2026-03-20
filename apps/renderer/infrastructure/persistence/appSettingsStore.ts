@@ -1,6 +1,6 @@
 import { ProviderId } from '@/shared/types/chat';
 import type { LanguagePreference } from '@/shared/utils/i18n';
-import type { ThemePreference } from '@/shared/utils/theme';
+import type { AccentPreference, ThemePreference } from '@/shared/utils/theme';
 import { listProviderIds } from '@/infrastructure/providers/registry';
 import { readAppStorage, writeAppStorage } from '@/infrastructure/persistence/storageKeys';
 
@@ -12,6 +12,7 @@ export type AppSettings = {
   activeProviderId: ProviderId;
   languagePreference: LanguagePreference;
   themePreference: ThemePreference;
+  accentPreference: AccentPreference;
   allowHttpTargets: boolean;
   toolCallMaxRounds: string;
 };
@@ -27,6 +28,7 @@ const areAppSettingsEqual = (left: AppSettings, right: AppSettings): boolean => 
     left.activeProviderId === right.activeProviderId &&
     left.languagePreference === right.languagePreference &&
     left.themePreference === right.themePreference &&
+    left.accentPreference === right.accentPreference &&
     left.allowHttpTargets === right.allowHttpTargets &&
     left.toolCallMaxRounds === right.toolCallMaxRounds
   );
@@ -38,6 +40,23 @@ const isLanguagePreference = (value: unknown): value is LanguagePreference => {
 
 const isThemePreference = (value: unknown): value is ThemePreference => {
   return value === 'system' || value === 'light' || value === 'dark';
+};
+
+const isAccentPreference = (value: unknown): value is AccentPreference => {
+  return (
+    value === 'neutral' ||
+    value === 'blue' ||
+    value === 'sky' ||
+    value === 'cyan' ||
+    value === 'teal' ||
+    value === 'green' ||
+    value === 'lime' ||
+    value === 'amber' ||
+    value === 'orange' ||
+    value === 'rose' ||
+    value === 'red' ||
+    value === 'violet'
+  );
 };
 
 const isProviderId = (value: unknown): value is ProviderId => {
@@ -68,6 +87,7 @@ export const getDefaultAppSettings = (): AppSettings => {
     activeProviderId: fallbackProviderId,
     languagePreference: 'system',
     themePreference: 'system',
+    accentPreference: 'neutral',
     allowHttpTargets: false,
     toolCallMaxRounds: String(DEFAULT_MAX_TOOL_CALL_ROUNDS),
   };
@@ -90,6 +110,9 @@ export const normalizeAppSettings = (
     themePreference: isThemePreference(raw.themePreference)
       ? raw.themePreference
       : (fallback.themePreference ?? defaults.themePreference),
+    accentPreference: isAccentPreference(raw.accentPreference)
+      ? raw.accentPreference
+      : (fallback.accentPreference ?? defaults.accentPreference),
     allowHttpTargets:
       typeof raw.allowHttpTargets === 'boolean'
         ? raw.allowHttpTargets

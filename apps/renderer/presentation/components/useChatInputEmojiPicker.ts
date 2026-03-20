@@ -294,8 +294,8 @@ export const useChatInputEmojiPicker = ({
     handleEmojiButtonMouseDown,
     handleEmojiPickerToggle,
     emojiButtonToneClass: isEmojiPickerOpen
-      ? 'text-[var(--ink-1)]'
-      : 'text-[var(--ink-3)] hover:text-[var(--ink-1)]',
+      ? 'text-[var(--accent)]'
+      : 'text-[var(--ink-3)] hover:text-[var(--accent)]',
     emojiToggleLabel: isEmojiPickerOpen ? t('input.emoji.close') : t('input.emoji.open'),
     emojiPickerProps: {
       isOpen: isEmojiPickerOpen,

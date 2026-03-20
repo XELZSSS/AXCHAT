@@ -8,6 +8,7 @@ import {
   ACTIVE_EMOJI_TAB_CLASS,
   EMOJI_BUTTON_CLASS,
   EMOJI_PICKER_CLASS,
+  EMOJI_TAB_COLUMNS,
   EMOJI_PICKER_DEFAULT_WIDTH,
   EMOJI_PICKER_MIN_WIDTH,
   EMOJI_PICKER_VIEWPORT_PADDING,
@@ -107,9 +108,9 @@ export const ChatInputEmojiPicker = ({
       onKeyDown={onKeyDown}
     >
       <div className="mb-2 flex items-center gap-2">
-        <div className="relative flex-1">
+        <div className="group relative flex-1">
           <SearchIcon
-            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--ink-3)]"
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--ink-3)] transition-colors duration-160 ease-out group-focus-within:text-[var(--accent)]"
             size={16}
             strokeWidth={2}
           />
@@ -127,7 +128,7 @@ export const ChatInputEmojiPicker = ({
               type="button"
               onMouseDown={onMouseDownPreserveFocus}
               onClick={onSearchClear}
-              className="absolute right-1.5 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[var(--ink-3)] transition-colors duration-160 ease-out hover:bg-[var(--bg-2)] hover:text-[var(--ink-1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)]"
+              className="absolute right-1.5 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[var(--ink-3)] transition-colors duration-160 ease-out hover:bg-[var(--bg-2)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-interactive)]"
               aria-label={t('input.emoji.searchClear')}
               title={t('input.emoji.searchClear')}
             >
@@ -147,7 +148,10 @@ export const ChatInputEmojiPicker = ({
         ) : null}
       </div>
 
-      <div className="mb-2 grid grid-cols-5 gap-1">
+      <div
+        className="mb-2 grid gap-1"
+        style={{ gridTemplateColumns: `repeat(${EMOJI_TAB_COLUMNS}, minmax(0, 1fr))` }}
+      >
         {categories.map((category) => (
           <button
             key={category.id}
